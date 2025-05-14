@@ -1,8 +1,15 @@
 import { generatePrediction } from "../services/genai.service.js";
 import { extractJSON } from "../utils/jsonExtractor.js";
+import {
+  saveUserIfNotExists,
+  saveJamurLog,
+} from "../services/firebase.service.js";
 
 export const prediksiJamur = async (req, res) => {
-  const logs = req.body.logs;
+  const { logs } = req.body;
+
+  // user diambil dari token yang sudah diverifikasi oleh middleware
+  const { uid, name, email } = req.user;
 
   if (!Array.isArray(logs)) {
     return res.status(400).json({ error: "Body harus berisi array 'logs'" });
@@ -21,17 +28,29 @@ Berdasarkan data tersebut, berikan satu kesimpulan umum mengenai kemungkinan per
 Balas hanya dengan JSON dengan struktur seperti ini:
 
 {
-  "kesimpulan": "Teks kesimpulan singkat",
-  "skorPertumbuhan": angka dari 0 sampai 10,
-  "tingkatRisiko": "rendah" | "sedang" | "tinggi",
-  "saran": "Saran singkat untuk mengurangi atau mengontrol pertumbuhan jamur.",
-  "deskripsi": "Penjelasan singkat mengapa kesimpulan tersebut diambil berdasarkan data."
+  "kesimpulan": "...",
+  "skorPertumbuhan": 0-10,
+  "tingkatRisiko": "...",
+  "saran": "...",
+  "deskripsi": "..."
 }
 `;
 
   try {
-    const result = await generatePrediction(prompt);
-    const json = extractJSON(result);
+    const aiResponse = await generatePrediction(prompt);
+    const json = extractJSON(aiResponse);
+
+    // Simpan user jika belum ada
+    if (name && email) {
+      await saveUserIfNotExists(uid, { name, email });
+    }
+
+    // Simpan log pertumbuhan jamur
+    await saveJamurLog(uid, {
+      ...json,
+      inputLogs: logs,
+    });
+
     res.json(json);
   } catch (err) {
     console.error("❌ Error:", err.message);
