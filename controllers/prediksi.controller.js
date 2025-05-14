@@ -75,3 +75,48 @@ export const getJamurHistory = async (req, res) => {
       .json({ error: "Gagal mengambil history log", detail: err.message });
   }
 };
+
+export const prediksiDariHistory = async (req, res) => {
+  const userId = req.user.uid;
+
+  try {
+    const logs = await getUserLogs(userId);
+
+    if (logs.length === 0) {
+      return res.status(404).json({ error: "Tidak ada data log ditemukan" });
+    }
+
+    // Buat prompt dari semua logs
+    let prompt =
+      "Berikut adalah data suhu dan kelembapan dari beberapa hari terakhir:\n\n";
+    logs.forEach((log, index) => {
+      prompt += `Log ${index + 1}: Suhu ${
+        log.inputLogs[0].temperature
+      }°C, Kelembapan ${log.inputLogs[0].humidity}%\n`;
+    });
+
+    prompt += `
+Berdasarkan keseluruhan data ini, berikan satu kesimpulan umum mengenai kemungkinan pertumbuhan jamur.
+
+Balas hanya dengan JSON seperti ini:
+
+{
+  "kesimpulan": "...",
+  "skorPertumbuhan": 0-10,
+  "tingkatRisiko": "...",
+  "saran": "...",
+  "deskripsi": "..."
+}
+`;
+
+    const aiResponse = await generatePrediction(prompt);
+    const json = extractJSON(aiResponse);
+
+    res.json(json);
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Gagal memprediksi dari history", detail: err.message });
+  }
+};
