@@ -17,3 +17,19 @@ export const saveJamurLog = async (userId, logData) => {
     timestamp: new Date().toISOString(),
   });
 };
+
+export const getUserLogs = async (userId) => {
+  const snapshot = await db
+    .collection("users")
+    .doc(userId)
+    .collection("logs")
+    .orderBy("timestamp", "desc")
+    .get();
+
+  const logs = [];
+  snapshot.forEach((doc) => {
+    logs.push({ id: doc.id, ...doc.data() });
+  });
+
+  return logs;
+};

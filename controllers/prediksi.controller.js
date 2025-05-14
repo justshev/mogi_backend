@@ -59,3 +59,19 @@ Balas hanya dengan JSON dengan struktur seperti ini:
       .json({ error: "Gagal menghasilkan prediksi", detail: err.message });
   }
 };
+
+import { getUserLogs } from "../services/firebase.service.js";
+
+export const getJamurHistory = async (req, res) => {
+  const userId = req.user.uid; // ✅ Ambil dari token yang sudah diverifikasi di middleware
+
+  try {
+    const logs = await getUserLogs(userId);
+    res.json({ userId, logs });
+  } catch (err) {
+    console.error("❌ Error mengambil history log:", err.message);
+    res
+      .status(500)
+      .json({ error: "Gagal mengambil history log", detail: err.message });
+  }
+};
