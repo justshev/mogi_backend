@@ -18,6 +18,22 @@ export const saveJamurLog = async (userId, logData) => {
   });
 };
 
+export const getUserData = async (uid) => {
+  try {
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      throw new Error(`User  UID ${uid} not found`);
+    }
+
+    return userDoc.data();
+  } catch (error) {
+    console.error("❌ fail to get data user:", error);
+    throw error;
+  }
+};
+
 export const getUserLogs = async (userId) => {
   const snapshot = await db
     .collection("users")

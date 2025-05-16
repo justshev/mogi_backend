@@ -3,7 +3,9 @@ import { extractJSON } from "../utils/jsonExtractor.js";
 import {
   saveUserIfNotExists,
   saveJamurLog,
+  getUserData,
 } from "../services/firebase.service.js";
+import WebSocket from "ws";
 
 export const prediksiJamur = async (req, res) => {
   const { logs } = req.body;
@@ -67,16 +69,73 @@ export const getJamurHistory = async (req, res) => {
 
   try {
     const logs = await getUserLogs(userId);
-    res.json({ userId, logs });
+    const userData = await getUserData(userId);
+    res.json({
+      userId,
+      userName: userData.name,
+      userEmail: userData.email,
+      logs,
+    });
   } catch (err) {
-    console.error("❌ Error mengambil history log:", err.message);
-    res
-      .status(500)
-      .json({ error: "Gagal mengambil history log", detail: err.message });
+    console.error("❌ Error  history log:", err.message);
+    res.status(500).json({ error: "Failed history log", detail: err.message });
   }
 };
 
+// export const prediksiDariHistory = async (req, res) => {
+//   const userId = req.user.uid;
+
+//   try {
+//     const logs = await getUserLogs(userId);
+
+//     if (logs.length === 0) {
+//       return res.status(404).json({ error: "Tidak ada data log ditemukan" });
+//     }
+
+//     // Buat prompt dari semua logs
+//     let prompt =
+//       "Berikut adalah data suhu dan kelembapan dari beberapa hari terakhir:\n\n";
+//     logs.forEach((log, index) => {
+//       prompt += `Log ${index + 1}: Suhu ${
+//         log.inputLogs[0].temperature
+//       }°C, Kelembapan ${log.inputLogs[0].humidity}%\n`;
+//     });
+
+//     prompt += `
+// Berdasarkan keseluruhan data ini, berikan satu kesimpulan umum mengenai kemungkinan pertumbuhan jamur.
+
+// Balas hanya dengan JSON seperti ini:
+
+// {
+//   "kesimpulan": "...",
+//   "skorPertumbuhan": 0-10,
+//   "tingkatRisiko": "Sedang/Rendah/Tinggi",
+//   "saran": "...",
+//   "deskripsi": "..."
+// }
+// `;
+
+//     const aiResponse = await generatePrediction(prompt);
+//     const json = extractJSON(aiResponse);
+
+//     // send result to websocket clients
+//     // clients.forEach((client) => {
+//     //   if (client.readyState === WebSocket.OPEN) {
+//     //     client.send(JSON.stringify(json));
+//     //   }
+//     // });
+
+//     res.json(json);
+//   } catch (err) {
+//     console.error("❌ Error:", err.message);
+//     res
+//       .status(500)
+//       .json({ error: "Gagal memprediksi dari history", detail: err.message });
+//   }
+// };
+
 export const prediksiDariHistory = async (req, res) => {
+  const clients = req.wssClients; // dapatkan clients dari middleware
   const userId = req.user.uid;
 
   try {
@@ -86,7 +145,6 @@ export const prediksiDariHistory = async (req, res) => {
       return res.status(404).json({ error: "Tidak ada data log ditemukan" });
     }
 
-    // Buat prompt dari semua logs
     let prompt =
       "Berikut adalah data suhu dan kelembapan dari beberapa hari terakhir:\n\n";
     logs.forEach((log, index) => {
@@ -96,14 +154,14 @@ export const prediksiDariHistory = async (req, res) => {
     });
 
     prompt += `
-Berdasarkan keseluruhan data ini, berikan satu kesimpulan umum mengenai kemungkinan pertumbuhan jamur.
+Berdasarkan keseluruhan data ini, berikan satu kesimpulan umum mengenai kemungkinan pertumbuhan jamur. JAWAB DENGAN BAHASA INGGRIS !!
 
 Balas hanya dengan JSON seperti ini:
 
 {
   "kesimpulan": "...",
   "skorPertumbuhan": 0-10,
-  "tingkatRisiko": "...",
+  "tingkatRisiko": "High/Medium/Low",
   "saran": "...",
   "deskripsi": "..."
 }
@@ -112,11 +170,48 @@ Balas hanya dengan JSON seperti ini:
     const aiResponse = await generatePrediction(prompt);
     const json = extractJSON(aiResponse);
 
+    // Kirim hasil ke semua client WebSocket yang terkoneksi
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(json));
+      }
+    });
+
     res.json(json);
   } catch (err) {
     console.error("❌ Error:", err.message);
-    res
-      .status(500)
-      .json({ error: "Gagal memprediksi dari history", detail: err.message });
+    res.status(500).json({ error: "Fail to get data", detail: err.message });
   }
+};
+
+export const getData = async (req, res) => {
+  const data = req.body;
+  // buatlah agar data yg ditermma strukturnya seperti ini
+  // {
+  //   "temperature": 25,
+  //   "humidity": 60
+  // }
+  if (!data.temperature || !data.humidity) {
+    return res.status(400).json({
+      error: "Format data tidak valid",
+      message: "Data must format: { 'temperature': nilai, 'humidity': nilai }",
+      received: data,
+    });
+  }
+
+  const validatedData = {
+    temperature: data.temperature,
+    humidity: data.humidity,
+  };
+
+  req.wssClients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(validatedData));
+    }
+  });
+
+  res.status(200).json({
+    message: "Sent to ke WebSocket client",
+    data: validatedData,
+  });
 };

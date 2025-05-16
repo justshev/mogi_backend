@@ -8,7 +8,7 @@ export const registerUser = async (req, res) => {
   if (!email || !password || !name) {
     return res
       .status(400)
-      .json({ error: "Email, password, dan nama harus diisi" });
+      .json({ error: "Email, password, and name cannot be empty" });
   }
 
   try {
@@ -20,14 +20,12 @@ export const registerUser = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "User berhasil terdaftar",
+      message: "User successfully registered",
       user: userRecord,
     });
   } catch (err) {
     console.error("Error registering new user:", err.message);
-    res
-      .status(500)
-      .json({ error: "Gagal mendaftar pengguna", detail: err.message });
+    res.status(500).json({ error: "Failed", detail: err.message });
   }
 };
 
@@ -37,7 +35,9 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: "Email dan password harus diisi" });
+    return res
+      .status(400)
+      .json({ error: "Email and password must be inputted" });
   }
 
   try {
@@ -55,16 +55,16 @@ export const loginUser = async (req, res) => {
     const { idToken, refreshToken, expiresIn, localId } = response.data;
 
     res.status(200).json({
-      message: "Login berhasil",
+      message: "Login successful",
       idToken,
       refreshToken,
       expiresIn,
       uid: localId,
     });
   } catch (err) {
-    console.error("Gagal login:", err.response?.data || err.message);
+    console.error("Failed to login:", err.response?.data || err.message);
     res.status(401).json({
-      error: "Gagal login pengguna",
+      error: "Failed to login",
       detail: err.response?.data?.error?.message || err.message,
     });
   }
