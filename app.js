@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 // Pasang router Express
-app.use("/api/prediksi-jamur", prediksiRouter);
+app.use("/api/data", prediksiRouter);
 app.use("/api/auth", authRouter);
 
 const PORT = process.env.PORT || 3000;

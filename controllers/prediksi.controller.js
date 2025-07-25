@@ -9,7 +9,7 @@ import WebSocket from "ws";
 import { getUserLogs } from "../services/firebase.service.js";
 
 // testing purpose
-// export const prediksiJamur = async (req, res) => {
+// export const saveDataLogs = async (req, res) => {
 //   const { logs } = req.body;
 
 //   // user diambil dari token yang sudah diverifikasi oleh middleware
@@ -63,6 +63,35 @@ import { getUserLogs } from "../services/firebase.service.js";
 //       .json({ error: "Gagal menghasilkan prediksi", detail: err.message });
 //   }
 // };
+
+export const LiveDataLogs = async (req, res) => {
+  const { temperature, humidity } = req.body;
+  const { uid, name, email } = req.user;
+
+  if (!temperature || !humidity) {
+    return res.status(400).json({
+      error: "Format data tidak valid",
+      message: "Data must format: { 'temperature': nilai, 'humidity': nilai }",
+      received: req.body,
+    });
+  }
+
+  try {
+    // Simpan log pertumbuhan jamur
+    await saveJamurLog(uid, {
+      temperature,
+      humidity,
+    });
+
+    res.status(200).json({
+      message: "Log berhasil disimpan",
+      data: { temperature, humidity },
+    });
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    res.status(500).json({ error: "Gagal menyimpan log", detail: err.message });
+  }
+};
 
 export const getJamurHistory = async (req, res) => {
   const userId = req.user.uid; // ✅ Ambil dari token yang sudah diverifikasi di middleware
