@@ -5,9 +5,9 @@ import { getJamurHistory } from "../controllers/prediksi.controller.js";
 import { prediksiDariHistory } from "../controllers/prediksi.controller.js";
 const router = Router();
 
-router.post("/", authenticate, prediksiJamur);
+// router.post("/", authenticate, prediksiJamur);
 router.get("/history", authenticate, getJamurHistory);
 router.get("/prediksi-from-history", authenticate, prediksiDariHistory);
-router.post("/get-data", getData);
+// router.post("/get-data", getData);
 
 export default router;
