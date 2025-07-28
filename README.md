@@ -16,17 +16,6 @@
 * **Integrasi Firebase:** Penggunaan Firebase disimpulkan dari keberadaan `firebase.js` dan banyak paket Firebase di dalam `node_modules`.  Firebase mungkin digunakan untuk analitik, otentikasi, atau penyimpanan data.
 
 
-## 🛠️ Tumpukan Teknologi
-
-| Kategori         | Teknologi          | Catatan                                     |
-|-----------------|----------------------|---------------------------------------------|
-| Bahasa           | JavaScript          |                                             |
-| Framework         | Fastify (diindikasikan) | Diduga berdasarkan penggunaan `@fastify/busboy` |
-| Manajemen Paket   | Yarn                |                                             |
-| Database         | Tidak ditentukan     | Kemungkinan menggunakan Firebase sebagai database NoSQL |
-| Otentikasi       | JWT (diindikasikan) | Berdasarkan nama file `auth.controller.js` dan `auth.middleware.js` |
-| Layanan Cloud     | Firebase            | Berdasarkan keberadaan banyak paket Firebase di `node_modules` |
-
 
 ## 🏛️ Tinjauan Arsitektur
 
