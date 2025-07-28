@@ -17,11 +17,6 @@
 
 
 
-## 🏛️ Tinjauan Arsitektur
-
-Aplikasi ini menggunakan arsitektur monorepo, dengan semua kode berada dalam satu repositori.  Struktur file menunjukkan pemisahan antara controller, middleware, dan logika inti.  Integrasi dengan Firebase untuk layanan tambahan, seperti otentikasi dan analitik, juga digunakan.
-
-
 ## 🚀 Memulai
 
 1. Kloning repositori:
