@@ -1,6 +1,6 @@
-import firebase from "../firebase.js";
-const { db, auth } = firebase;
-import axios from "axios";
+import { supabaseAdmin } from "../supabase.js";
+import { saveUserIfNotExists } from "../services/prisma.service.js";
+
 // Fungsi untuk Register
 export const registerUser = async (req, res) => {
   const { email, password, name } = req.body;
@@ -12,16 +12,28 @@ export const registerUser = async (req, res) => {
   }
 
   try {
-    // Mendaftar pengguna dengan email dan password
-    const userRecord = await auth.createUser({
+    // Mendaftar pengguna dengan email dan password menggunakan Supabase Auth
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      displayName: name,
+      email_confirm: true, // Auto confirm email
+      user_metadata: { name },
     });
+
+    if (error) {
+      throw error;
+    }
+
+    // Simpan data user ke tabel users
+    await saveUserIfNotExists(data.user.id, { name, email });
 
     res.status(201).json({
       message: "User successfully registered",
-      user: userRecord,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: name,
+      },
     });
   } catch (err) {
     console.error("Error registering new user:", err.message);
@@ -29,8 +41,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-//login
-
+// Login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -41,31 +52,68 @@ export const loginUser = async (req, res) => {
   }
 
   try {
-    const apiKey = process.env.FIREBASE_API_KEY;
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    const response = await axios.post(
-      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
-      {
-        email,
-        password,
-        returnSecureToken: true,
-      }
-    );
+    if (error) {
+      throw error;
+    }
 
-    const { idToken, refreshToken, expiresIn, localId } = response.data;
+    const { session, user } = data;
 
     res.status(200).json({
       message: "Login successful",
-      idToken,
-      refreshToken,
-      expiresIn,
-      uid: localId,
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      expiresIn: session.expires_in,
+      expiresAt: session.expires_at,
+      uid: user.id,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.name,
+      },
     });
   } catch (err) {
-    console.error("Failed to login:", err.response?.data || err.message);
+    console.error("Failed to login:", err.message);
     res.status(401).json({
       error: "Failed to login",
-      detail: err.response?.data?.error?.message || err.message,
+      detail: err.message,
+    });
+  }
+};
+
+// Refresh Token
+export const refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ error: "Refresh token is required" });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({
+      message: "Token refreshed successfully",
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresIn: data.session.expires_in,
+      expiresAt: data.session.expires_at,
+    });
+  } catch (err) {
+    console.error("Failed to refresh token:", err.message);
+    res.status(401).json({
+      error: "Failed to refresh token",
+      detail: err.message,
     });
   }
 };

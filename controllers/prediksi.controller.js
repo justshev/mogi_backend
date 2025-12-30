@@ -4,9 +4,9 @@ import {
   saveUserIfNotExists,
   saveJamurLog,
   getUserData,
-} from "../services/firebase.service.js";
+  getUserLogs,
+} from "../services/prisma.service.js";
 import WebSocket from "ws";
-import { getUserLogs } from "../services/firebase.service.js";
 
 // testing purpose
 // export const saveDataLogs = async (req, res) => {
@@ -125,9 +125,9 @@ export const prediksiDariHistory = async (req, res) => {
     let prompt =
       "Berikut adalah data suhu dan kelembapan dari beberapa hari terakhir:\n\n";
     logs.forEach((log, index) => {
-      prompt += `Log ${index + 1}: Suhu ${
-        log.inputLogs[0].temperature
-      }°C, Kelembapan ${log.inputLogs[0].humidity}%\n`;
+      prompt += `Log ${index + 1}: Suhu ${log.temperature}°C, Kelembapan ${
+        log.humidity
+      }%\n`;
     });
 
     prompt += `
