@@ -6,6 +6,7 @@ import "dotenv/config";
 import prediksiRouter from "./routes/prediksi.route.js";
 import authRouter from "./routes/auth.route.js";
 import temperatureRouter from "./routes/temperature.route.js";
+import temperatureWsRouter from "./routes/temperature-ws.route.js";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 app.use("/api/data", prediksiRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/temperature", temperatureRouter);
+app.use("/api/temperature-ws", temperatureWsRouter);
 
 const PORT = process.env.PORT || 3000;
 

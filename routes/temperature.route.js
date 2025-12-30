@@ -6,12 +6,12 @@ import {
   resetState,
   receiveBulkData,
 } from "../controllers/temperature.controller.js";
-import { verifyToken } from "../middleware/auth.middleware.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Semua route memerlukan autentikasi
-router.use(verifyToken);
+router.use(authenticate);
 
 // POST /api/temperature/data - Terima data temperature dari Arduino/Postman
 router.post("/data", receiveTemperatureData);

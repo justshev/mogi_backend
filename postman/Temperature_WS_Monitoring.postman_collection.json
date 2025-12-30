@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "Temperature WS Monitoring",
+    "_postman_id": "temperature-ws-monitoring",
+    "description": "Collection untuk testing Temperature Monitoring via WebSocket (tanpa Supabase)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "1. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.session && jsonData.session.access_token) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.session.access_token);",
+                  "    console.log('✅ Token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "description": "Login untuk mendapatkan accessToken. Token akan auto-save ke variable."
+        }
+      ]
+    },
+    {
+      "name": "🌡️ Temperature WS",
+      "item": [
+        {
+          "name": "2. Reset State",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "reset"]
+            }
+          },
+          "description": "Reset state monitoring ke awal sebelum testing."
+        },
+        {
+          "name": "3. Set Config (1 menit interval)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threshold\": 5,\n  \"saveIntervalMinutes\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "config"]
+            }
+          },
+          "description": "Set interval ke 1 menit untuk testing cepat. Threshold 5°C untuk spike detection."
+        },
+        {
+          "name": "4. Send Temperature Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 28.5,\n  \"humidity\": 75.2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "data"]
+            }
+          },
+          "description": "Kirim data temperature normal. Data pertama akan disimpan, selanjutnya menunggu interval."
+        },
+        {
+          "name": "5. Send Temperature Data (Stabil)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 28.8,\n  \"humidity\": 76.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "data"]
+            }
+          },
+          "description": "Kirim data stabil (selisih kecil). Tidak akan disimpan jika belum interval."
+        },
+        {
+          "name": "6. Send Temperature SPIKE! 🔥",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 40.0,\n  \"humidity\": 90.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/data",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "data"]
+            }
+          },
+          "description": "🔥 Kirim data dengan lonjakan besar! Akan langsung disimpan ke database."
+        },
+        {
+          "name": "7. Get State",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/state",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "state"]
+            }
+          },
+          "description": "Lihat state monitoring saat ini: temperature terakhir, kapan terakhir disimpan, dst."
+        },
+        {
+          "name": "8. Send Bulk Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": [\n    { \"temperature\": 28.0, \"humidity\": 70.0 },\n    { \"temperature\": 28.2, \"humidity\": 71.0 },\n    { \"temperature\": 35.0, \"humidity\": 85.0 },\n    { \"temperature\": 28.5, \"humidity\": 72.0 },\n    { \"temperature\": 28.3, \"humidity\": 71.5 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "bulk"]
+            }
+          },
+          "description": "Kirim multiple data sekaligus. Data ke-3 ada spike!"
+        },
+        {
+          "name": "9. Simulate Data (Auto Generate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"count\": 10,\n  \"baseTemp\": 28,\n  \"baseHumidity\": 70,\n  \"includeSpike\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/temperature-ws/simulate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "temperature-ws", "simulate"]
+            }
+          },
+          "description": "Generate 10 data otomatis dengan spike di tengah. Cocok untuk demo!"
+        }
+      ]
+    },
+    {
+      "name": "📊 History",
+      "item": [
+        {
+          "name": "10. Get History (Cek DB)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/data/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "data", "history"]
+            }
+          },
+          "description": "Cek semua log yang sudah tersimpan di database."
+        }
+      ]
+    }
+  ]
+}
