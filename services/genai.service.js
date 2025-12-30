@@ -1,8 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
-const model = "gemini-2.0-flash";
+const model = "gemini-3-flash-preview";
 const config = {
   responseMimeType: "text/plain",
   systemInstruction: [
