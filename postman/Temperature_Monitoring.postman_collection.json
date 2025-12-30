@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "Mogi Temperature Monitoring",
+    "_postman_id": "temperature-monitoring-collection",
+    "description": "Collection untuk testing Temperature Monitoring API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.session && jsonData.session.access_token) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.session.access_token);",
+              "    console.log('Token saved!');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "2. Send Temperature Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"temperature\": 28.5,\n  \"humidity\": 75.2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/data",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "data"]
+        }
+      }
+    },
+    {
+      "name": "3. Send Temperature Spike",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"temperature\": 40.0,\n  \"humidity\": 90.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/data",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "data"]
+        }
+      },
+      "description": "Kirim data dengan lonjakan temperature untuk trigger spike detection"
+    },
+    {
+      "name": "4. Send Bulk Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": [\n    { \"temperature\": 28.0, \"humidity\": 70.0 },\n    { \"temperature\": 28.2, \"humidity\": 71.0 },\n    { \"temperature\": 35.0, \"humidity\": 85.0 },\n    { \"temperature\": 28.5, \"humidity\": 72.0 }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/bulk",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "bulk"]
+        }
+      }
+    },
+    {
+      "name": "5. Get State",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/state",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "state"]
+        }
+      }
+    },
+    {
+      "name": "6. Update Config",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"threshold\": 3,\n  \"saveIntervalMinutes\": 15\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/config",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "config"]
+        }
+      },
+      "description": "Update threshold untuk spike detection dan interval save"
+    },
+    {
+      "name": "7. Reset State",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/temperature/reset",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "temperature", "reset"]
+        }
+      }
+    },
+    {
+      "name": "8. Get History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/data/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "data", "history"]
+        }
+      },
+      "description": "Cek log yang sudah tersimpan di database"
+    }
+  ]
+}

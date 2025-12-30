@@ -11,7 +11,8 @@ API untuk monitoring pertumbuhan jamur dengan fitur prediksi AI.
 1. [Setup & Configuration](#setup--configuration)
 2. [Authentication](#authentication)
 3. [Data Endpoints](#data-endpoints)
-4. [WebSocket](#websocket)
+4. [Temperature Monitoring](#temperature-monitoring)
+5. [WebSocket](#websocket)
 
 ---
 
@@ -368,6 +369,262 @@ Authorization: Bearer <accessToken>
 
 ---
 
+## 🌡️ Temperature Monitoring
+
+Endpoint untuk monitoring temperature secara realtime dengan logic:
+
+- **Stabil**: Data disimpan ke database setiap 30 menit
+- **Lonjakan**: Data langsung disimpan jika ada perubahan temperature >= threshold (default: 5°C)
+
+### Supabase Setup
+
+Sebelum menggunakan endpoint ini, jalankan SQL migration di Supabase SQL Editor:
+
+```sql
+-- Lihat file: supabase/migrations/temperature_realtime.sql
+```
+
+---
+
+### 1. Send Temperature Data
+
+Mengirim data temperature dari Arduino/sensor (gunakan Postman untuk testing).
+
+**Endpoint:** `POST /api/temperature/data`
+
+**Headers:**
+
+```
+Content-Type: application/json
+Authorization: Bearer <accessToken>
+```
+
+**Request Body:**
+
+```json
+{
+  "temperature": 28.5,
+  "humidity": 75.2
+}
+```
+
+**Success Response (200) - Data Stabil:**
+
+```json
+{
+  "success": true,
+  "message": "Data temperature diterima dan dipush ke realtime",
+  "data": {
+    "realtimePushed": true,
+    "logSaved": false,
+    "saveReason": null,
+    "log": null,
+    "currentState": {
+      "temperature": 28.5,
+      "humidity": 75.2,
+      "lastSavedAt": "2025-01-01T12:00:00.000Z",
+      "nextSaveIn": 1200
+    }
+  }
+}
+```
+
+**Success Response (200) - Lonjakan Terdeteksi:**
+
+```json
+{
+  "success": true,
+  "message": "Data temperature diterima dan disimpan ke log (spike_detected)",
+  "data": {
+    "realtimePushed": true,
+    "logSaved": true,
+    "saveReason": "spike_detected",
+    "log": {
+      "id": "uuid-log-id",
+      "userId": "uuid-user-id",
+      "temperature": 35.0,
+      "humidity": 80.0,
+      "timestamp": "2025-01-01T12:05:00.000Z",
+      "createdAt": "2025-01-01T12:05:00.000Z"
+    },
+    "currentState": {
+      "temperature": 35.0,
+      "humidity": 80.0,
+      "lastSavedAt": "2025-01-01T12:05:00.000Z",
+      "nextSaveIn": 1800
+    }
+  }
+}
+```
+
+**Success Response (200) - Interval 30 Menit:**
+
+```json
+{
+  "success": true,
+  "message": "Data temperature diterima dan disimpan ke log (interval_30min)",
+  "data": {
+    "realtimePushed": true,
+    "logSaved": true,
+    "saveReason": "interval_30min",
+    "log": { ... },
+    "currentState": { ... }
+  }
+}
+```
+
+---
+
+### 2. Send Bulk Data
+
+Mengirim multiple data sekaligus (untuk testing spike detection).
+
+**Endpoint:** `POST /api/temperature/bulk`
+
+**Headers:**
+
+```
+Content-Type: application/json
+Authorization: Bearer <accessToken>
+```
+
+**Request Body:**
+
+```json
+{
+  "data": [
+    { "temperature": 28.0, "humidity": 70.0 },
+    { "temperature": 28.2, "humidity": 71.0 },
+    { "temperature": 35.0, "humidity": 85.0 },
+    { "temperature": 28.5, "humidity": 72.0 }
+  ]
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "4 data berhasil diproses",
+  "results": [
+    { "realtimePushed": true, "logSaved": true, "saveReason": "interval_30min", ... },
+    { "realtimePushed": true, "logSaved": false, ... },
+    { "realtimePushed": true, "logSaved": true, "saveReason": "spike_detected", ... },
+    { "realtimePushed": true, "logSaved": true, "saveReason": "spike_detected", ... }
+  ]
+}
+```
+
+---
+
+### 3. Get Monitoring State
+
+Mendapatkan state monitoring saat ini.
+
+**Endpoint:** `GET /api/temperature/state`
+
+**Headers:**
+
+```
+Authorization: Bearer <accessToken>
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "state": {
+    "lastSavedAt": 1704110400000,
+    "lastTemperature": 28.5,
+    "lastHumidity": 75.2,
+    "threshold": 5,
+    "saveInterval": 1800000,
+    "lastSavedAtFormatted": "2025-01-01T12:00:00.000Z",
+    "nextSaveInSeconds": 1200
+  }
+}
+```
+
+---
+
+### 4. Update Configuration
+
+Update konfigurasi threshold dan interval.
+
+**Endpoint:** `POST /api/temperature/config`
+
+**Headers:**
+
+```
+Content-Type: application/json
+Authorization: Bearer <accessToken>
+```
+
+**Request Body:**
+
+```json
+{
+  "threshold": 3,
+  "saveIntervalMinutes": 15
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Konfigurasi berhasil diupdate",
+  "updated": {
+    "threshold": 3,
+    "saveIntervalMinutes": 15
+  },
+  "currentState": {
+    "lastSavedAt": null,
+    "lastTemperature": null,
+    "lastHumidity": null,
+    "threshold": 3,
+    "saveInterval": 900000,
+    "lastSavedAtFormatted": null,
+    "nextSaveInSeconds": 0
+  }
+}
+```
+
+---
+
+### 5. Reset State
+
+Reset semua state monitoring.
+
+**Endpoint:** `POST /api/temperature/reset`
+
+**Headers:**
+
+```
+Authorization: Bearer <accessToken>
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "State berhasil direset",
+  "state": {
+    "lastSavedAt": null,
+    "lastTemperature": null,
+    "lastHumidity": null,
+    "threshold": 5,
+    "saveInterval": 1800000
+  }
+}
+```
+
+---
+
 ## 🔌 WebSocket
 
 Server juga support WebSocket untuk real-time data streaming.
@@ -393,7 +650,21 @@ ws.onclose = () => {
 
 ### Events
 
-WebSocket akan menerima data prediksi ketika endpoint `/api/data/prediksi-from-history` dipanggil:
+WebSocket akan menerima data temperature realtime ketika endpoint `/api/temperature/data` dipanggil:
+
+```json
+{
+  "type": "TEMPERATURE_UPDATE",
+  "userId": "uuid-user-id",
+  "data": {
+    "temperature": 28.5,
+    "humidity": 75.2,
+    "timestamp": "2025-01-01T12:00:00.000Z"
+  }
+}
+```
+
+WebSocket juga menerima data prediksi ketika endpoint `/api/data/prediksi-from-history` dipanggil:
 
 ```json
 {
@@ -434,6 +705,22 @@ curl -X POST http://localhost:3000/api/data/live-data \
   -d '{"temperature":28.5,"humidity":75.2}'
 ```
 
+### Send Temperature Data (ganti TOKEN)
+
+```bash
+curl -X POST http://localhost:3000/api/temperature/data \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{"temperature":28.5,"humidity":75.2}'
+```
+
+### Get Temperature State
+
+```bash
+curl -X GET http://localhost:3000/api/temperature/state \
+  -H "Authorization: Bearer TOKEN"
+```
+
 ### Get History
 
 ```bash
@@ -452,14 +739,19 @@ curl -X GET http://localhost:3000/api/data/prediksi-from-history \
 
 ## 📦 API Summary Table
 
-| Method | Endpoint                          | Auth | Description                   |
-| ------ | --------------------------------- | ---- | ----------------------------- |
-| POST   | `/api/auth/register`              | ❌   | Register user baru            |
-| POST   | `/api/auth/login`                 | ❌   | Login user                    |
-| POST   | `/api/auth/refresh`               | ❌   | Refresh access token          |
-| POST   | `/api/data/live-data`             | ✅   | Simpan data suhu & kelembapan |
-| GET    | `/api/data/history`               | ✅   | Ambil riwayat data            |
-| GET    | `/api/data/prediksi-from-history` | ✅   | Dapatkan prediksi AI          |
+| Method | Endpoint                          | Auth | Description                     |
+| ------ | --------------------------------- | ---- | ------------------------------- |
+| POST   | `/api/auth/register`              | ❌   | Register user baru              |
+| POST   | `/api/auth/login`                 | ❌   | Login user                      |
+| POST   | `/api/auth/refresh`               | ❌   | Refresh access token            |
+| POST   | `/api/data/live-data`             | ✅   | Simpan data suhu & kelembapan   |
+| GET    | `/api/data/history`               | ✅   | Ambil riwayat data              |
+| GET    | `/api/data/prediksi-from-history` | ✅   | Dapatkan prediksi AI            |
+| POST   | `/api/temperature/data`           | ✅   | Kirim data temperature realtime |
+| POST   | `/api/temperature/bulk`           | ✅   | Kirim multiple data sekaligus   |
+| GET    | `/api/temperature/state`          | ✅   | Get monitoring state            |
+| POST   | `/api/temperature/config`         | ✅   | Update konfigurasi monitoring   |
+| POST   | `/api/temperature/reset`          | ✅   | Reset state monitoring          |
 
 ---
 
