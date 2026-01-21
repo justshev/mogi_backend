@@ -26,14 +26,16 @@ _Backend cerdas untuk monitoring pertumbuhan jamur dengan prediksi AI real-time_
 
 ## ✨ Fitur Utama
 
-| Fitur                       | Deskripsi                                                   |
-| --------------------------- | ----------------------------------------------------------- |
-| 🌡️ **Real-time Monitoring** | Pantau suhu dan kelembapan secara langsung via WebSocket    |
-| 🤖 **AI Prediction**        | Prediksi pertumbuhan jamur menggunakan Google Gemini AI     |
-| 📊 **Smart Logging**        | Penyimpanan data pintar: setiap 30 menit atau saat lonjakan |
-| 🔐 **Secure Auth**          | Autentikasi aman dengan Supabase Auth + JWT                 |
-| 🔌 **WebSocket Support**    | Streaming data real-time ke aplikasi client                 |
-| 📈 **History Analytics**    | Riwayat lengkap data monitoring untuk analisis              |
+| Fitur                       | Deskripsi                                                     |
+| --------------------------- | ------------------------------------------------------------- |
+| 🌡️ **Real-time Monitoring** | Pantau suhu dan kelembapan secara langsung via WebSocket      |
+| 🤖 **AI Prediction**        | Prediksi pertumbuhan jamur menggunakan Google Gemini AI       |
+| 📊 **Smart Logging**        | Penyimpanan data pintar: setiap 30 menit atau saat lonjakan   |
+| 🔐 **Secure Auth**          | Autentikasi aman dengan Supabase Auth + JWT                   |
+| 🔌 **WebSocket Support**    | Streaming data real-time ke aplikasi client                   |
+| 📈 **History Analytics**    | Riwayat lengkap data monitoring untuk analisis                |
+| 📱 **Device Management**    | Registrasi & pengelolaan device dengan sistem PIN             |
+| 🎮 **Device Control**       | Kontrol Arduino dengan session berbasis PIN (5 menit timeout) |
 
 ---
 
@@ -143,24 +145,31 @@ mogi_backend/
 │
 ├── 📁 controllers/              # Logic handler API
 │   ├── auth.controller.js       # Handler autentikasi
+│   ├── device.controller.js     # Handler device management
+│   ├── device-control.controller.js # Handler device control (Arduino)
 │   ├── prediksi.controller.js   # Handler prediksi AI
 │   ├── temperature.controller.js    # Handler temperature (Supabase RT)
 │   └── temperature-ws.controller.js # Handler temperature (WebSocket)
 │
 ├── 📁 routes/                   # Definisi endpoint API
 │   ├── auth.route.js            # Route autentikasi
+│   ├── device.route.js          # Route device management
+│   ├── device-control.route.js  # Route device control
 │   ├── prediksi.route.js        # Route prediksi
 │   ├── temperature.route.js     # Route temperature
 │   └── temperature-ws.route.js  # Route temperature WebSocket
 │
 ├── 📁 services/                 # Business logic layer
+│   ├── device.service.js        # Service untuk device management
+│   ├── device-session.service.js # Service untuk device session (PIN auth)
 │   ├── genai.service.js         # Service untuk Google AI
 │   ├── prisma.service.js        # Service untuk Prisma
 │   ├── temperature.service.js   # Service temperature
 │   └── temperature-ws.service.js # Service temperature WebSocket
 │
 ├── 📁 middleware/               # Express middleware
-│   └── auth.middleware.js       # Middleware autentikasi JWT
+│   ├── auth.middleware.js       # Middleware autentikasi JWT
+│   └── device-session.middleware.js # Middleware validasi device session
 │
 ├── 📁 prisma/                   # Database schema
 │   └── schema.prisma            # Prisma schema definition
@@ -172,9 +181,13 @@ mogi_backend/
 │   └── jsonExtractor.js         # Utility extract JSON dari AI response
 │
 ├── 📁 docs/                     # Dokumentasi tambahan
+│   ├── DEVICE_API_DOCS.md       # Docs Device Management API
+│   ├── DEVICE_CONTROL_API_DOCS.md # Docs Device Control API
 │   └── TEMPERATURE_WS_DOCS.md   # Docs WebSocket API
 │
 └── 📁 postman/                  # Koleksi Postman untuk testing
+    ├── Device_Management.postman_collection.json
+    ├── Device_Management_API.postman_collection.json
     ├── Temperature_Monitoring.postman_collection.json
     └── Temperature_WS_Monitoring.postman_collection.json
 ```
@@ -228,7 +241,39 @@ http://localhost:3000
 | `POST` | `/api/temperature-ws/config`   |  ✅  | Update config            |
 | `POST` | `/api/temperature-ws/reset`    |  ✅  | Reset state              |
 
-> 📚 **Dokumentasi lengkap:** Lihat [API_DOCS.md](API_DOCS.md) untuk detail request/response
+#### 📱 Device Management
+
+| Method | Endpoint                         | Auth | Deskripsi                         |
+| ------ | -------------------------------- | :--: | --------------------------------- |
+| `POST` | `/api/device/create`             |  ❌  | Buat device baru (admin/system)   |
+| `GET`  | `/api/device/status/:deviceCode` |  ❌  | Cek status device                 |
+| `POST` | `/api/device/register`           |  ✅  | Register device (claim ownership) |
+| `POST` | `/api/device/connect`            |  ✅  | Connect ke device dengan PIN      |
+| `POST` | `/api/device/forget`             |  ✅  | Lepas kepemilikan device          |
+| `POST` | `/api/device/change-pin`         |  ✅  | Ubah PIN device                   |
+| `GET`  | `/api/device/my-devices`         |  ✅  | List semua device user            |
+| `PUT`  | `/api/device/update-name`        |  ✅  | Update nama device                |
+| `GET`  | `/api/device/:deviceCode`        |  ✅  | Get detail device                 |
+
+#### 🎮 Device Control (Arduino)
+
+| Method | Endpoint                                 |  Auth   | Deskripsi                |
+| ------ | ---------------------------------------- | :-----: | ------------------------ |
+| `POST` | `/api/device/auth`                       |   ✅    | Auth device dengan PIN   |
+| `GET`  | `/api/device/session/status`             | ✅ + 🔑 | Cek status session       |
+| `POST` | `/api/device/session/extend`             | ✅ + 🔑 | Perpanjang session       |
+| `POST` | `/api/device/session/logout`             | ✅ + 🔑 | Logout session           |
+| `POST` | `/api/device/control`                    | ✅ + 🔑 | Kirim kontrol ke Arduino |
+| `GET`  | `/api/device/control/:deviceCode/status` | ✅ + 🔑 | Get status device        |
+
+> 🔑 = Memerlukan Device Session Token (header `X-Device-Session`)
+
+> 📚 **Dokumentasi lengkap:**
+>
+> - [API_DOCS.md](API_DOCS.md) - General API
+> - [docs/DEVICE_API_DOCS.md](docs/DEVICE_API_DOCS.md) - Device Management
+> - [docs/DEVICE_CONTROL_API_DOCS.md](docs/DEVICE_CONTROL_API_DOCS.md) - Device Control
+> - [docs/TEMPERATURE_WS_DOCS.md](docs/TEMPERATURE_WS_DOCS.md) - Temperature WebSocket
 
 ---
 
@@ -336,6 +381,63 @@ curl -X GET http://localhost:3000/api/data/prediksi-from-history \
 }
 ```
 
+### 5. Register Device
+
+```bash
+curl -X POST http://localhost:3000/api/device/register \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "deviceCode": "DEVICE-001",
+    "pin": "1234"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "message": "Device registered successfully",
+  "device": {
+    "id": "uuid-device-id",
+    "deviceCode": "DEVICE-001",
+    "name": "Alat Monitoring Suhu #1",
+    "isRegistered": true,
+    "owner": {
+      "id": "uuid-user-id",
+      "name": "Pak Tani",
+      "email": "petani@jamur.com"
+    }
+  }
+}
+```
+
+### 6. Auth Device & Kirim Kontrol
+
+```bash
+# Step 1: Auth device dengan PIN (dapat session token berlaku 5 menit)
+curl -X POST http://localhost:3000/api/device/auth \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "deviceCode": "DEVICE-001",
+    "pin": "1234"
+  }'
+
+# Step 2: Kirim kontrol ke Arduino (dengan session token)
+curl -X POST http://localhost:3000/api/device/control \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Device-Session: SESSION_TOKEN_FROM_AUTH" \
+  -d '{
+    "deviceCode": "DEVICE-001",
+    "targetTemperature": 28.5,
+    "targetHumidity": 75,
+    "fanSpeed": 80,
+    "heaterOn": true
+  }'
+```
+
 ---
 
 ## 🔌 WebSocket Connection
@@ -391,6 +493,24 @@ ws.onerror = (error) => {
 }
 ```
 
+#### Device Control (dari App ke Arduino)
+
+```json
+{
+  "type": "DEVICE_CONTROL",
+  "deviceId": "uuid-device-id",
+  "deviceCode": "DEVICE-001",
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "controls": {
+    "targetTemperature": 28.5,
+    "targetHumidity": 75,
+    "fanSpeed": 80,
+    "heaterOn": true,
+    "action": "START_MONITORING"
+  }
+}
+```
+
 ---
 
 ## 🧪 Testing dengan Postman
@@ -399,11 +519,17 @@ Import koleksi Postman yang sudah disediakan:
 
 1. Buka **Postman**
 2. Klik **Import** → pilih file dari folder `postman/`:
-   - `Temperature_Monitoring.postman_collection.json`
-   - `Temperature_WS_Monitoring.postman_collection.json`
-3. Jalankan request **Login** terlebih dahulu
-4. Copy `accessToken` dari response
-5. Set header `Authorization: Bearer <accessToken>` untuk request lainnya
+   - `Device_Management.postman_collection.json` - Device Management API
+   - `Device_Management_API.postman_collection.json` - Device Management API (Extended)
+   - `Temperature_Monitoring.postman_collection.json` - Temperature Monitoring
+   - `Temperature_WS_Monitoring.postman_collection.json` - Temperature WebSocket
+3. Set collection variables:
+   - `baseUrl`: `http://localhost:3000`
+   - `accessToken`: Token dari response login
+   - `deviceCode`: Kode device (contoh: `DEVICE-001`)
+   - `pin`: PIN device (contoh: `1234`)
+4. Jalankan request **Login** terlebih dahulu
+5. Copy `accessToken` dari response dan set ke variable
 
 ---
 
@@ -411,22 +537,54 @@ Import koleksi Postman yang sudah disediakan:
 
 ```
 ┌─────────────────┐     ┌─────────────────────────────────────────┐     ┌─────────────────┐
-│   Arduino/IoT   │     │              MOGI Backend               │     │   Mobile App    │
-│    Sensors      │────▶│                                         │────▶│   (Flutter)     │
+│   Arduino/IoT   │◄───▶│              MOGI Backend               │◄───▶│   Mobile App    │
+│    Sensors      │     │                                         │     │   (Flutter)     │
 │  (DHT11/DHT22)  │     │  ┌─────────┐  ┌─────────┐  ┌─────────┐  │     │                 │
 └─────────────────┘     │  │ Express │──│ Service │──│  Prisma │  │     └─────────────────┘
-                        │  │ Router  │  │  Layer  │  │   ORM   │  │              │
-                        │  └─────────┘  └─────────┘  └────┬────┘  │              │
-                        │       │            │            │       │              │
-                        │       ▼            ▼            ▼       │              │
-                        │  ┌─────────┐  ┌─────────┐  ┌─────────┐  │              │
-                        │  │Websocket│  │Google AI│  │Supabase │  │              │
-                        │  │ Server  │  │ (Gemini)│  │   DB    │  │              │
-                        │  └────┬────┘  └─────────┘  └─────────┘  │              │
+        │               │  │ Router  │  │  Layer  │  │   ORM   │  │              │
+        │               │  └─────────┘  └─────────┘  └────┬────┘  │              │
+        │               │       │            │            │       │              │
+        ▼               │       ▼            ▼            ▼       │              │
+┌─────────────────┐     │  ┌─────────┐  ┌─────────┐  ┌─────────┐  │              │
+│  Device Control │────▶│  │Websocket│  │Google AI│  │Supabase │  │              │
+│  (via Session)  │     │  │ Server  │  │ (Gemini)│  │   DB    │  │              │
+└─────────────────┘     │  └────┬────┘  └─────────┘  └─────────┘  │              │
                         └───────┼─────────────────────────────────┘              │
                                 │                                                │
                                 └────────────────────────────────────────────────┘
                                             Real-time Data Stream
+```
+
+### Device Session Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Device Control Flow                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. POST /api/device/auth                                   │
+│     ├── Input: deviceCode, pin                              │
+│     └── Output: session token (valid 5 min)                 │
+│                       │                                      │
+│                       ▼                                      │
+│  2. POST /api/device/control                                │
+│     ├── Header: X-Device-Session: <token>                   │
+│     ├── Body: { targetTemperature, fanSpeed, ... }          │
+│     └── Output: success + broadcast ke Arduino via WS       │
+│                       │                                      │
+│            ┌──────────┴──────────┐                          │
+│            │                     │                          │
+│            ▼                     ▼                          │
+│   Session masih valid     Session expired                   │
+│   (< 5 menit)             (> 5 menit)                       │
+│            │                     │                          │
+│            │                     ▼                          │
+│            │         Error → Auth ulang dengan PIN          │
+│            │                                                 │
+│            ▼                                                 │
+│   POST /api/device/session/extend (perpanjang 5 menit)      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Flow Data
@@ -472,15 +630,24 @@ Import koleksi Postman yang sudah disediakan:
 
 ## ⚠️ Error Codes
 
-| Status | Arti         | Solusi                      |
-| ------ | ------------ | --------------------------- |
-| `200`  | Success      | ✅ Request berhasil         |
-| `201`  | Created      | ✅ Resource berhasil dibuat |
-| `400`  | Bad Request  | Periksa format data request |
-| `401`  | Unauthorized | Login ulang / refresh token |
-| `403`  | Forbidden    | Token tidak valid           |
-| `404`  | Not Found    | Data tidak ditemukan        |
-| `500`  | Server Error | Cek log server              |
+| Status | Arti         | Solusi                            |
+| ------ | ------------ | --------------------------------- |
+| `200`  | Success      | ✅ Request berhasil               |
+| `201`  | Created      | ✅ Resource berhasil dibuat       |
+| `400`  | Bad Request  | Periksa format data request       |
+| `401`  | Unauthorized | Login ulang / refresh token       |
+| `403`  | Forbidden    | Token/akses tidak valid           |
+| `404`  | Not Found    | Data tidak ditemukan              |
+| `409`  | Conflict     | Data sudah ada (device terdaftar) |
+| `500`  | Server Error | Cek log server                    |
+
+### Device Session Error Codes
+
+| Code               | Deskripsi                               |
+| ------------------ | --------------------------------------- |
+| `SESSION_REQUIRED` | Session token tidak disertakan          |
+| `SESSION_EXPIRED`  | Session sudah expired, perlu auth ulang |
+| `SESSION_MISMATCH` | Session bukan milik user yang login     |
 
 ---
 
@@ -493,7 +660,15 @@ Import koleksi Postman yang sudah disediakan:
 | `threshold`    | 5°C      | Selisih suhu untuk trigger "lonjakan" |
 | `saveInterval` | 30 menit | Interval penyimpanan data stabil      |
 
-### Update Configuration
+### Device PIN Requirements
+
+| Parameter | Requirement              |
+| --------- | ------------------------ |
+| Format    | Angka saja (0-9)         |
+| Panjang   | 4-6 digit                |
+| Contoh    | `1234`, `123456`, `0000` |
+
+### Update Monitoring Configuration
 
 ```bash
 curl -X POST http://localhost:3000/api/temperature/config \
@@ -527,7 +702,7 @@ Distributed under the **ISC License**.
 
 ## 📞 Contact & Support
 
-**Developer Team:** Ayo Beraksi - Telkom University
+**Developer Team:** Nirmalabs - Telkom University
 
 Jika ada pertanyaan atau kendala, silakan buka **Issue** di repository ini.
 
