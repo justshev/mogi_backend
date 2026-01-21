@@ -7,6 +7,8 @@ import prediksiRouter from "./routes/prediksi.route.js";
 import authRouter from "./routes/auth.route.js";
 import temperatureRouter from "./routes/temperature.route.js";
 import temperatureWsRouter from "./routes/temperature-ws.route.js";
+import deviceRouter from "./routes/device.route.js";
+import deviceControlRouter from "./routes/device-control.route.js";
 
 const app = express();
 app.use(express.json());
@@ -39,6 +41,8 @@ app.use("/api/data", prediksiRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/temperature", temperatureRouter);
 app.use("/api/temperature-ws", temperatureWsRouter);
+app.use("/api/device", deviceRouter);
+app.use("/api/device", deviceControlRouter); // Device control & session endpoints
 
 const PORT = process.env.PORT || 3000;
 

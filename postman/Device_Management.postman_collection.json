@@ -1,0 +1,387 @@
+{
+  "info": {
+    "name": "Device Management API",
+    "_postman_id": "device-management-api",
+    "description": "API untuk mengelola perangkat (device) dengan sistem kepemilikan dan PIN password",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deviceSessionToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Device (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"name\": \"Alat Monitoring Suhu #1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "create"]
+        },
+        "description": "Membuat device baru dalam sistem (Admin/System endpoint)"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Check Device Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/status/DEVICE-001",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "status", "DEVICE-001"]
+        },
+        "description": "Mengecek status device sebelum registrasi"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Register Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "register"]
+        },
+        "description": "Mendaftarkan device ke user (menjadi pemilik)"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Connect to Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/connect",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "connect"]
+        },
+        "description": "Menghubungkan ke device dengan verifikasi PIN"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get My Devices",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/my-devices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "my-devices"]
+        },
+        "description": "Mendapatkan daftar semua device yang dimiliki user"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get Device Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/DEVICE-001",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "DEVICE-001"]
+        },
+        "description": "Mendapatkan detail lengkap device"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Update Device Name",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"name\": \"Alat Baru Saya\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/update-name",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "update-name"]
+        },
+        "description": "Mengubah nama device"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Change Device PIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"oldPin\": \"1234\",\n  \"newPin\": \"5678\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/change-pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "change-pin"]
+        },
+        "description": "Mengubah PIN device"
+      },
+      "response": []
+    },
+    {
+      "name": "9. Forget Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/forget",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "forget"]
+        },
+        "description": "Melepaskan kepemilikan device"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Authenticate Device (Get Session)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/auth",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "auth"]
+        },
+        "description": "Autentikasi device dengan PIN untuk mendapatkan session token (berlaku 5 menit)"
+      },
+      "response": []
+    },
+    {
+      "name": "11. Check Session Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "X-Device-Session",
+            "value": "{{deviceSessionToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/session/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "session", "status"]
+        },
+        "description": "Mengecek status session dan sisa waktu"
+      },
+      "response": []
+    },
+    {
+      "name": "12. Extend Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "X-Device-Session",
+            "value": "{{deviceSessionToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/session/extend",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "session", "extend"]
+        },
+        "description": "Memperpanjang session selama 5 menit lagi"
+      },
+      "response": []
+    },
+    {
+      "name": "13. Send Control Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "X-Device-Session",
+            "value": "{{deviceSessionToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"targetTemperature\": 28.5,\n  \"targetHumidity\": 75,\n  \"fanSpeed\": 80,\n  \"heaterOn\": true,\n  \"action\": \"START_MONITORING\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/control",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "control"]
+        },
+        "description": "Mengirim data kontrol ke Arduino (memerlukan session token valid)"
+      },
+      "response": []
+    },
+    {
+      "name": "14. Get Device Control Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "X-Device-Session",
+            "value": "{{deviceSessionToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/control/DEVICE-001/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "control", "DEVICE-001", "status"]
+        },
+        "description": "Mendapatkan status device (memerlukan session token valid)"
+      },
+      "response": []
+    },
+    {
+      "name": "15. Logout Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "X-Device-Session",
+            "value": "{{deviceSessionToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/session/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "session", "logout"]
+        },
+        "description": "Mengakhiri session sebelum expired"
+      },
+      "response": []
+    }
+  ]
+}

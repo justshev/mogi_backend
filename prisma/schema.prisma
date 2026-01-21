@@ -21,19 +21,39 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   logs      Log[]
+  devices   Device[] // Devices owned by this user
 
   @@map("users")
+}
+
+model Device {
+  id           String    @id @default(uuid())
+  deviceCode   String    @unique @map("device_code") // Unique code for the device (e.g., serial number)
+  name         String?   // Optional device name
+  pin          String    // PIN password (hashed, numbers only)
+  ownerId      String?   @map("owner_id") // Owner of the device
+  isRegistered Boolean   @default(false) @map("is_registered") // Whether device has an owner
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  connectedAt  DateTime? @map("connected_at") // Last connection time
+
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  logs  Log[]
+
+  @@map("devices")
 }
 
 model Log {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
+  deviceId    String?  @map("device_id") // Optional device reference
   temperature Float?
   humidity    Float?
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
 
   @@map("logs")
 }

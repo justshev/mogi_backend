@@ -1,0 +1,950 @@
+{
+  "info": {
+    "_postman_id": "device-management-api-collection",
+    "name": "Device Management API",
+    "description": "API untuk mengelola perangkat (device) dengan sistem kepemilikan dan PIN password.\n\n## Flow Penggunaan\n1. User Register/Login\n2. User cek status device → GET /api/device/status/:deviceCode\n3. Jika device belum terdaftar → POST /api/device/register (dengan PIN baru)\n4. Untuk koneksi berikutnya → POST /api/device/connect (dengan PIN)\n5. Untuk melepas device → POST /api/device/forget (dengan PIN)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deviceCode",
+      "value": "DEVICE-001",
+      "type": "string"
+    },
+    {
+      "key": "pin",
+      "value": "1234",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Device (Admin/System)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"name\": \"Alat Monitoring Suhu #1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "create"]
+        },
+        "description": "Membuat device baru dalam sistem. Biasanya dilakukan oleh admin atau sistem saat device baru diproduksi.\n\n**Authentication:** Tidak diperlukan (sebaiknya diproteksi dengan admin auth di production)"
+      },
+      "response": [
+        {
+          "name": "201 Created - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"name\": \"Alat Monitoring Suhu #1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "create"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device created successfully\",\n  \"device\": {\n    \"id\": \"uuid-device-id\",\n    \"deviceCode\": \"DEVICE-001\",\n    \"name\": \"Alat Monitoring Suhu #1\",\n    \"isRegistered\": false\n  }\n}"
+        },
+        {
+          "name": "409 Conflict - Device Code Already Exists",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"name\": \"Alat Monitoring Suhu #1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "create"]
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Device code already exists\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Check Device Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/status/{{deviceCode}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "status", "{{deviceCode}}"]
+        },
+        "description": "Mengecek status device sebelum registrasi. Berguna untuk menampilkan informasi apakah device sudah memiliki owner atau belum.\n\n**Authentication:** Tidak diperlukan"
+      },
+      "response": [
+        {
+          "name": "200 OK - Device Belum Terdaftar",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/status/DEVICE-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "status", "DEVICE-001"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device status retrieved\",\n  \"status\": {\n    \"exists\": true,\n    \"isRegistered\": false,\n    \"hasOwner\": false,\n    \"deviceId\": \"uuid-device-id\",\n    \"deviceName\": \"Alat Monitoring Suhu #1\",\n    \"ownerName\": null\n  }\n}"
+        },
+        {
+          "name": "200 OK - Device Sudah Terdaftar",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/status/DEVICE-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "status", "DEVICE-001"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device status retrieved\",\n  \"status\": {\n    \"exists\": true,\n    \"isRegistered\": true,\n    \"hasOwner\": true,\n    \"deviceId\": \"uuid-device-id\",\n    \"deviceName\": \"Alat Monitoring Suhu #1\",\n    \"ownerName\": \"John Doe\"\n  }\n}"
+        },
+        {
+          "name": "200 OK - Device Tidak Ditemukan",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/status/DEVICE-999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "status", "DEVICE-999"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device status retrieved\",\n  \"status\": {\n    \"exists\": false,\n    \"isRegistered\": false,\n    \"hasOwner\": false\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Register Device (Claim Ownership)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"pin\": \"{{pin}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "register"]
+        },
+        "description": "Mendaftarkan device ke user (menjadi pemilik). User harus membuat PIN baru saat registrasi.\n\n**Authentication:** Required (Bearer Token)\n\n**PIN Requirements:**\n- PIN harus berupa angka saja (0-9)\n- Panjang PIN: 4-6 digit"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "register"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device registered successfully\",\n  \"device\": {\n    \"id\": \"uuid-device-id\",\n    \"deviceCode\": \"DEVICE-001\",\n    \"name\": \"Alat Monitoring Suhu #1\",\n    \"isRegistered\": true,\n    \"owner\": {\n      \"id\": \"uuid-user-id\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\"\n    }\n  }\n}"
+        },
+        {
+          "name": "404 Not Found - Device Not Found",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-999\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "register"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Device not found. Please check the device code.\"\n}"
+        },
+        {
+          "name": "409 Conflict - Device Already Registered",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "register"]
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Device is already registered to another user\",\n  \"message\": \"The device owner must forget/release the device first before you can register it.\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Invalid PIN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"abc\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "register"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"PIN must be 4-6 digits (numbers only)\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Connect to Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"pin\": \"{{pin}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/connect",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "connect"]
+        },
+        "description": "Menghubungkan ke device dengan verifikasi PIN. Digunakan setiap kali user ingin mengontrol device.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "connect"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Connected to device successfully\",\n  \"device\": {\n    \"id\": \"uuid-device-id\",\n    \"deviceCode\": \"DEVICE-001\",\n    \"name\": \"Alat Monitoring Suhu #1\",\n    \"connectedAt\": \"2026-01-11T10:30:00.000Z\"\n  }\n}"
+        },
+        {
+          "name": "401 Unauthorized - Invalid PIN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"0000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "connect"]
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Invalid PIN\"\n}"
+        },
+        {
+          "name": "401 Unauthorized - Not Owner",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "connect"]
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"You are not the owner of this device\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "5. Forget Device (Release Ownership)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"pin\": \"{{pin}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/forget",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "forget"]
+        },
+        "description": "Melepaskan kepemilikan device. Device akan bisa didaftarkan oleh user lain setelah di-forget.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/forget",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "forget"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device forgotten successfully. The device can now be registered by another user.\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Not Owner",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/forget",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "forget"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"You are not the owner of this device\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Invalid PIN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"pin\": \"0000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/forget",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "forget"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Invalid PIN\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. Change Device PIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"oldPin\": \"{{pin}}\",\n  \"newPin\": \"5678\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/change-pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "change-pin"]
+        },
+        "description": "Mengubah PIN device. Memerlukan PIN lama untuk verifikasi.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"oldPin\": \"1234\",\n  \"newPin\": \"5678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/change-pin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "change-pin"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"PIN changed successfully\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Invalid Current PIN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"oldPin\": \"0000\",\n  \"newPin\": \"5678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/change-pin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "change-pin"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Invalid current PIN\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Invalid New PIN Format",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"oldPin\": \"1234\",\n  \"newPin\": \"abc\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/change-pin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "change-pin"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"New PIN must be 4-6 digits (numbers only)\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. Get My Devices",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/my-devices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "my-devices"]
+        },
+        "description": "Mendapatkan daftar semua device yang dimiliki oleh user yang sedang login.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/my-devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "my-devices"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Devices retrieved successfully\",\n  \"count\": 2,\n  \"devices\": [\n    {\n      \"id\": \"uuid-device-1\",\n      \"deviceCode\": \"DEVICE-001\",\n      \"name\": \"Alat Monitoring Suhu #1\",\n      \"isRegistered\": true,\n      \"connectedAt\": \"2026-01-11T10:30:00.000Z\",\n      \"createdAt\": \"2026-01-01T00:00:00.000Z\"\n    },\n    {\n      \"id\": \"uuid-device-2\",\n      \"deviceCode\": \"DEVICE-002\",\n      \"name\": \"Alat Monitoring Suhu #2\",\n      \"isRegistered\": true,\n      \"connectedAt\": \"2026-01-10T08:15:00.000Z\",\n      \"createdAt\": \"2026-01-05T00:00:00.000Z\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "8. Update Device Name",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceCode\": \"{{deviceCode}}\",\n  \"name\": \"Alat Baru Saya\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/device/update-name",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "update-name"]
+        },
+        "description": "Mengubah nama device.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"DEVICE-001\",\n  \"name\": \"Alat Baru Saya\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/device/update-name",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "update-name"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device name updated successfully\",\n  \"device\": {\n    \"id\": \"uuid-device-id\",\n    \"deviceCode\": \"DEVICE-001\",\n    \"name\": \"Alat Baru Saya\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. Get Device Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/device/{{deviceCode}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "device", "{{deviceCode}}"]
+        },
+        "description": "Mendapatkan detail lengkap device. Hanya bisa diakses oleh pemilik device.\n\n**Authentication:** Required (Bearer Token)"
+      },
+      "response": [
+        {
+          "name": "200 OK - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/DEVICE-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "DEVICE-001"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Device details retrieved\",\n  \"device\": {\n    \"id\": \"uuid-device-id\",\n    \"deviceCode\": \"DEVICE-001\",\n    \"name\": \"Alat Monitoring Suhu #1\",\n    \"isRegistered\": true,\n    \"connectedAt\": \"2026-01-11T10:30:00.000Z\",\n    \"createdAt\": \"2026-01-01T00:00:00.000Z\",\n    \"owner\": {\n      \"id\": \"uuid-user-id\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\"\n    }\n  }\n}"
+        },
+        {
+          "name": "403 Forbidden - Not Owner",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/device/DEVICE-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "device", "DEVICE-001"]
+            }
+          },
+          "status": "Forbidden",
+          "code": 403,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"You are not the owner of this device\"\n}"
+        }
+      ]
+    }
+  ]
+}
