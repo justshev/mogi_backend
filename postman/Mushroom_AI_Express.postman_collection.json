@@ -1,0 +1,724 @@
+{
+  "info": {
+    "_postman_id": "mushroom-ai-express-v2",
+    "name": "🍄 Mushroom AI - Express Backend (10 Features)",
+    "description": "Complete Postman collection for Express Backend API with integrated ML inference.\n\n## Workflow\n1. Register/Login to get JWT token\n2. Send sensor data via /api/temperature/data or /bulk\n3. Call inference endpoints to get predictions\n\n## Features\n- 10-feature ML prediction\n- Indonesian language responses\n- Real-time feature aggregation\n- Prediction history",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@mushroom.farm\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved: ' + jsonData.token.substring(0, 20) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@mushroom.farm\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login to get JWT token. Token is automatically saved to collection variables."
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Get current user profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌡️ Temperature API",
+      "item": [
+        {
+          "name": "Send Temperature Data (Single)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 26.5,\n  \"humidity\": 85.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "data"]
+            },
+            "description": "Send single temperature & humidity reading.\n\nFields:\n- temperature: number (Celsius)\n- humidity: number (percentage)"
+          }
+        },
+        {
+          "name": "Send Temperature Data (Bulk - Optimal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": [\n    {\"temperature\": 25.5, \"humidity\": 84.0},\n    {\"temperature\": 26.0, \"humidity\": 85.0},\n    {\"temperature\": 26.2, \"humidity\": 86.0},\n    {\"temperature\": 25.8, \"humidity\": 85.5},\n    {\"temperature\": 26.3, \"humidity\": 84.5},\n    {\"temperature\": 25.9, \"humidity\": 85.2},\n    {\"temperature\": 26.1, \"humidity\": 85.8},\n    {\"temperature\": 25.7, \"humidity\": 84.8},\n    {\"temperature\": 26.4, \"humidity\": 85.3},\n    {\"temperature\": 25.6, \"humidity\": 86.2}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "bulk"]
+            },
+            "description": "Send multiple temperature readings at once (for testing).\n\nBody format:\n```json\n{\n  \"data\": [\n    {\"temperature\": 26.0, \"humidity\": 85.0},\n    ...\n  ]\n}\n```\n\nThis example sends optimal conditions (stable around 26°C, 85%)"
+          }
+        },
+        {
+          "name": "Send Temperature Data (Bulk - High Temp)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": [\n    {\"temperature\": 29.0, \"humidity\": 82.0},\n    {\"temperature\": 30.5, \"humidity\": 80.0},\n    {\"temperature\": 31.2, \"humidity\": 78.0},\n    {\"temperature\": 32.0, \"humidity\": 76.0},\n    {\"temperature\": 31.8, \"humidity\": 75.0},\n    {\"temperature\": 32.5, \"humidity\": 74.0},\n    {\"temperature\": 33.0, \"humidity\": 73.0},\n    {\"temperature\": 32.2, \"humidity\": 72.0},\n    {\"temperature\": 33.5, \"humidity\": 71.0},\n    {\"temperature\": 34.0, \"humidity\": 70.0}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "bulk"]
+            },
+            "description": "BAD sensor readings for testing:\n- Temperature rising from 29 to 34°C (too hot!)\n- Humidity dropping from 82% to 70% (too dry!)\n\nExpected prediction: High risk, anomaly detected"
+          }
+        },
+        {
+          "name": "Send Temperature Data (Bulk - Unstable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": [\n    {\"temperature\": 20.0, \"humidity\": 70.0},\n    {\"temperature\": 32.0, \"humidity\": 95.0},\n    {\"temperature\": 18.0, \"humidity\": 65.0},\n    {\"temperature\": 35.0, \"humidity\": 98.0},\n    {\"temperature\": 22.0, \"humidity\": 75.0},\n    {\"temperature\": 30.0, \"humidity\": 90.0},\n    {\"temperature\": 19.0, \"humidity\": 68.0},\n    {\"temperature\": 33.0, \"humidity\": 92.0},\n    {\"temperature\": 21.0, \"humidity\": 72.0},\n    {\"temperature\": 28.0, \"humidity\": 88.0}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "bulk"]
+            },
+            "description": "Highly UNSTABLE readings (simulating sensor issues or wild environment):\n- Temperature swinging between 18-35°C\n- Humidity swinging between 65-98%\n\nExpected: High std values, anomaly detected"
+          }
+        },
+        {
+          "name": "Get Temperature State",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/temperature/state",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "state"]
+            },
+            "description": "Get current temperature monitoring state"
+          }
+        },
+        {
+          "name": "Update Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threshold\": 1.0,\n  \"saveIntervalMinutes\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "config"]
+            },
+            "description": "Update temperature monitoring configuration:\n- threshold: Change threshold for saving to log\n- saveIntervalMinutes: Interval between saves"
+          }
+        },
+        {
+          "name": "Reset State",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/temperature/reset",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "reset"]
+            },
+            "description": "Reset temperature monitoring state"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔮 Inference",
+      "item": [
+        {
+          "name": "Full Prediction (Real-time)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 24\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict"]
+            },
+            "description": "Full prediction with real-time feature aggregation.\n\n1. Fetches sensor data from last N hours\n2. Aggregates to 10 features (avg, std, trend)\n3. Sends to FastAPI for ML prediction\n4. Returns Indonesian language results\n\nResponse includes:\n- waktuPanen: Harvest time estimate\n- risiko: Risk assessment\n- anomali: Anomaly detection\n- rekomendasi: Actionable recommendations"
+          }
+        },
+        {
+          "name": "Full Prediction (1 Hour)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict"]
+            },
+            "description": "Prediction using only last 1 hour of data (useful for testing after sending bulk data)"
+          }
+        },
+        {
+          "name": "Prediction from Stored Features",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict-stored",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict-stored"]
+            },
+            "description": "Faster prediction using pre-computed features from feature store"
+          }
+        },
+        {
+          "name": "Compute Features",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"windowType\": \"hourly\",\n  \"baglogCount\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/compute-features",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "compute-features"]
+            },
+            "description": "Compute and store aggregated features for a time window.\n\nwindowType options:\n- hourly: Last hour of data\n- daily: Last 24 hours of data"
+          }
+        },
+        {
+          "name": "Get Features Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inference/features/summary?hoursBack=24",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "features", "summary"],
+              "query": [
+                {
+                  "key": "hoursBack",
+                  "value": "24"
+                }
+              ]
+            },
+            "description": "Get feature summary with data quality metrics"
+          }
+        },
+        {
+          "name": "Get Prediction History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inference/history?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get history of past predictions"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/inference/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "health"]
+            },
+            "description": "Check health of inference pipeline (public endpoint)\n\nChecks:\n- Express server\n- FastAPI connection\n- Supabase connection\n- Circuit breaker status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Complete Workflow",
+      "item": [
+        {
+          "name": "1. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@mushroom.farm\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "2. Send Sensor Data (Bulk)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": [\n    {\"temperature\": 25.5, \"humidity\": 84.0},\n    {\"temperature\": 26.0, \"humidity\": 85.0},\n    {\"temperature\": 26.2, \"humidity\": 86.0},\n    {\"temperature\": 25.8, \"humidity\": 85.5},\n    {\"temperature\": 26.3, \"humidity\": 84.5},\n    {\"temperature\": 25.9, \"humidity\": 85.2},\n    {\"temperature\": 26.1, \"humidity\": 85.8},\n    {\"temperature\": 25.7, \"humidity\": 84.8},\n    {\"temperature\": 26.4, \"humidity\": 85.3},\n    {\"temperature\": 25.6, \"humidity\": 86.2}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "3. Get Prediction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict"]
+            }
+          }
+        }
+      ],
+      "description": "Run these requests in order to test the complete workflow:\n\n1. Login - Get JWT token\n2. Send Sensor Data - Populate temperature logs\n3. Get Prediction - Run ML inference on aggregated data"
+    },
+    {
+      "name": "🧪 Test Scenarios",
+      "item": [
+        {
+          "name": "Scenario: Optimal Conditions",
+          "item": [
+            {
+              "name": "1. Send Optimal Data",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": [\n    {\"temperature\": 25.0, \"humidity\": 86.0},\n    {\"temperature\": 25.2, \"humidity\": 85.8},\n    {\"temperature\": 25.1, \"humidity\": 86.2},\n    {\"temperature\": 25.3, \"humidity\": 85.5},\n    {\"temperature\": 25.0, \"humidity\": 86.0}\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/temperature/bulk",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "temperature", "bulk"]
+                }
+              }
+            },
+            {
+              "name": "2. Predict Optimal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/inference/predict",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "inference", "predict"]
+                },
+                "description": "Expected:\n- Low risk\n- No anomaly\n- Positive recommendations"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Scenario: High Temperature Crisis",
+          "item": [
+            {
+              "name": "1. Send High Temp Data",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": [\n    {\"temperature\": 30.0, \"humidity\": 78.0},\n    {\"temperature\": 31.5, \"humidity\": 76.0},\n    {\"temperature\": 32.0, \"humidity\": 75.0},\n    {\"temperature\": 33.0, \"humidity\": 73.0},\n    {\"temperature\": 34.0, \"humidity\": 70.0}\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/temperature/bulk",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "temperature", "bulk"]
+                }
+              }
+            },
+            {
+              "name": "2. Predict High Temp",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/inference/predict",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "inference", "predict"]
+                },
+                "description": "Expected:\n- HIGH risk\n- Anomaly detected\n- Recommendations for cooling"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Scenario: Unstable Environment",
+          "item": [
+            {
+              "name": "1. Send Unstable Data",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": [\n    {\"temperature\": 20.0, \"humidity\": 70.0},\n    {\"temperature\": 32.0, \"humidity\": 95.0},\n    {\"temperature\": 18.0, \"humidity\": 65.0},\n    {\"temperature\": 35.0, \"humidity\": 98.0},\n    {\"temperature\": 22.0, \"humidity\": 75.0}\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/temperature/bulk",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "temperature", "bulk"]
+                }
+              }
+            },
+            {
+              "name": "2. Predict Unstable",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"baglogCount\": 200,\n  \"hoursBack\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/inference/predict",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "inference", "predict"]
+                },
+                "description": "Expected:\n- Anomaly detected (high std values)\n- Recommendations for stability"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

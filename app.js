@@ -9,6 +9,7 @@ import temperatureRouter from "./routes/temperature.route.js";
 import temperatureWsRouter from "./routes/temperature-ws.route.js";
 import deviceRouter from "./routes/device.route.js";
 import deviceControlRouter from "./routes/device-control.route.js";
+import inferenceRouter from "./routes/inference.route.js";
 
 const app = express();
 app.use(express.json());
@@ -43,6 +44,7 @@ app.use("/api/temperature", temperatureRouter);
 app.use("/api/temperature-ws", temperatureWsRouter);
 app.use("/api/device", deviceRouter);
 app.use("/api/device", deviceControlRouter); // Device control & session endpoints
+app.use("/api/inference", inferenceRouter); // ML inference endpoints
 
 const PORT = process.env.PORT || 3000;
 

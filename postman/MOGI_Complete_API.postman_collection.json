@@ -1,0 +1,1215 @@
+{
+  "info": {
+    "_postman_id": "mogi-complete-api-v2",
+    "name": "🍄 MOGI Complete API",
+    "description": "Koleksi lengkap API MOGI (Mushroom Optimal Growth Intelligence)\n\n## Alur Penggunaan\n\n1. **Authentication** - Register & Login untuk mendapatkan token\n2. **Device Management** - Setup dan registrasi device IoT\n3. **Temperature Monitoring** - Kirim dan pantau data sensor\n4. **ML Inference** - Dapatkan prediksi waktu panen dan risiko\n5. **Device Control** - Kontrol Arduino dengan session PIN\n\n## Setup Environment Variables\n\nSetelah import, pastikan set variable berikut:\n- `base_url`: http://localhost:3000\n- `accessToken`: (didapat dari Login)\n- `refreshToken`: (didapat dari Login)\n- `sessionToken`: (didapat dari Device Auth)\n- `deviceCode`: Kode device Anda",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deviceCode",
+      "value": "ESP32-001",
+      "type": "string"
+    },
+    {
+      "key": "devicePin",
+      "value": "123456",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1️⃣ Authentication",
+      "description": "Endpoint untuk registrasi, login, dan refresh token.\n\n**Urutan:**\n1. Register (sekali saja untuk user baru)\n2. Login (untuk mendapatkan accessToken)\n3. Refresh Token (saat token expired)",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Registration successful', function() {",
+                  "        var json = pm.response.json();",
+                  "        pm.expect(json.message).to.equal('User successfully registered');",
+                  "        pm.expect(json.user).to.have.property('id');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"petani@jamur.com\",\n    \"password\": \"password123\",\n    \"name\": \"Pak Tani\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Mendaftarkan user baru ke sistem MOGI.\n\n**Kegunaan:** Membuat akun untuk mengakses semua fitur API.\n\n**Kapan digunakan:** Sekali saja saat pertama kali menggunakan sistem."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    ",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(json.accessToken).to.be.a('string');",
+                  "        pm.expect(json.refreshToken).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    console.log('✅ Token saved to collection variables');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"petani@jamur.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login untuk mendapatkan access token.\n\n**Kegunaan:** Mendapatkan JWT token untuk mengakses endpoint yang memerlukan autentikasi.\n\n**Kapan digunakan:** Setiap kali memulai session baru atau setelah logout.\n\n**Auto-save:** Token akan otomatis tersimpan ke collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    ",
+                  "    pm.test('Token refreshed', function() {",
+                  "        pm.expect(json.accessToken).to.be.a('string');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Memperbarui access token yang sudah expired.\n\n**Kegunaan:** Mendapatkan token baru tanpa perlu login ulang.\n\n**Kapan digunakan:** Saat access token expired (biasanya setelah 1 jam)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2️⃣ Device Management",
+      "description": "Endpoint untuk mengelola device IoT (Arduino/ESP32).\n\n**Alur Setup Device Baru:**\n1. Create Device (Admin) - Buat device di database\n2. Check Status - Cek apakah device tersedia\n3. Register Device - Claim ownership dengan PIN\n\n**Alur Penggunaan Harian:**\n1. My Devices - Lihat daftar device\n2. Get Details - Lihat detail device tertentu\n3. Connect - Verifikasi kepemilikan dengan PIN",
+      "item": [
+        {
+          "name": "Create Device (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"ESP32-001\",\n    \"name\": \"Sensor Kumbung A\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "create"]
+            },
+            "description": "Membuat device baru di sistem (endpoint admin).\n\n**Kegunaan:** Mendaftarkan device baru ke database sebelum bisa di-claim oleh user.\n\n**Kapan digunakan:** Sekali saja saat setup device baru oleh admin.\n\n**⚠️ Catatan:** Di production, endpoint ini harus dilindungi dengan admin auth."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Device Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/device/status/{{deviceCode}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "status", "{{deviceCode}}"]
+            },
+            "description": "Mengecek status device (tersedia atau sudah dimiliki).\n\n**Kegunaan:** Melihat apakah device bisa di-claim sebelum registrasi.\n\n**Kapan digunakan:** Sebelum mencoba register device."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Device (Claim)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"pin\": \"{{devicePin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "register"]
+            },
+            "description": "Meng-claim device dan mengatur PIN.\n\n**Kegunaan:** Menjadi pemilik device dan mengamankan dengan PIN.\n\n**Kapan digunakan:** Sekali saat pertama kali setup device."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Devices",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/device/my-devices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "my-devices"]
+            },
+            "description": "Mendapatkan daftar semua device yang dimiliki user.\n\n**Kegunaan:** Melihat semua device yang sudah di-register.\n\n**Kapan digunakan:** Untuk menampilkan daftar device di aplikasi."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Device Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/device/{{deviceCode}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "{{deviceCode}}"]
+            },
+            "description": "Mendapatkan detail lengkap satu device.\n\n**Kegunaan:** Melihat informasi detail device tertentu.\n\n**Kapan digunakan:** Saat membuka halaman detail device."
+          },
+          "response": []
+        },
+        {
+          "name": "Connect to Device",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"pin\": \"{{devicePin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/connect",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "connect"]
+            },
+            "description": "Verifikasi PIN untuk mengakses device.\n\n**Kegunaan:** Memverifikasi kepemilikan device.\n\n**Kapan digunakan:** Sebelum mengakses data atau mengontrol device."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device Name",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"name\": \"Sensor Kumbung Utama\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/update-name",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "update-name"]
+            },
+            "description": "Mengubah nama device.\n\n**Kegunaan:** Memberikan nama yang lebih deskriptif.\n\n**Kapan digunakan:** Saat ingin mengubah identifikasi device."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Device PIN",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"oldPin\": \"{{devicePin}}\",\n    \"newPin\": \"654321\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/change-pin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "change-pin"]
+            },
+            "description": "Mengubah PIN device.\n\n**Kegunaan:** Meningkatkan keamanan dengan mengganti PIN.\n\n**Kapan digunakan:** Secara berkala atau jika PIN diketahui orang lain."
+          },
+          "response": []
+        },
+        {
+          "name": "Forget Device (Release)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"pin\": \"{{devicePin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/forget",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "forget"]
+            },
+            "description": "Melepas kepemilikan device.\n\n**Kegunaan:** Agar device bisa di-claim user lain.\n\n**Kapan digunakan:** Saat menjual atau memberikan device ke orang lain."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3️⃣ Temperature Monitoring",
+      "description": "Endpoint untuk menerima dan memantau data sensor suhu/kelembaban.\n\n**Alur:**\n1. Send Temperature Data - Arduino mengirim data sensor\n2. Get State - Lihat konfigurasi monitoring\n3. Update Config - Sesuaikan threshold dan interval\n\n**Catatan:**\n- Data disimpan ke database setiap 30 menit atau saat ada lonjakan\n- Data juga di-broadcast via WebSocket ke semua client yang terhubung",
+      "item": [
+        {
+          "name": "Send Temperature Data",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"temperature\": 26.5,\n    \"humidity\": 85.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "data"]
+            },
+            "description": "Endpoint utama untuk Arduino/ESP32 mengirim data sensor.\n\n**Kegunaan:** Menerima data suhu dan kelembaban dari sensor IoT.\n\n**Kapan digunakan:** Secara berkala oleh Arduino (misal setiap 1 menit).\n\n**Perilaku:**\n- Data selalu di-broadcast via WebSocket\n- Disimpan ke DB jika interval 30 menit tercapai ATAU ada lonjakan"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bulk Data (Testing)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"data\": [\n        { \"temperature\": 25.0, \"humidity\": 80.0 },\n        { \"temperature\": 25.5, \"humidity\": 81.0 },\n        { \"temperature\": 26.0, \"humidity\": 82.0 },\n        { \"temperature\": 26.5, \"humidity\": 83.0 },\n        { \"temperature\": 27.0, \"humidity\": 84.0 },\n        { \"temperature\": 27.5, \"humidity\": 85.0 }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "bulk"]
+            },
+            "description": "Mengirim banyak data sekaligus untuk testing.\n\n**Kegunaan:** Testing spike detection dan bulk processing.\n\n**Kapan digunakan:** Development dan testing saja."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Monitoring State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/temperature/state",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "state"]
+            },
+            "description": "Mendapatkan state monitoring saat ini.\n\n**Kegunaan:** Melihat konfigurasi dan data terakhir.\n\n**Return:**\n- threshold: Selisih untuk trigger lonjakan\n- saveIntervalMinutes: Interval simpan regular\n- lastSavedAt: Waktu terakhir disimpan ke DB\n- lastData: Data sensor terakhir"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Monitoring Config",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"threshold\": 3.0,\n    \"saveIntervalMinutes\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "config"]
+            },
+            "description": "Mengubah konfigurasi monitoring.\n\n**Kegunaan:** Menyesuaikan sensitivitas dan frekuensi penyimpanan.\n\n**Parameter:**\n- threshold: Selisih suhu/kelembaban yang dianggap lonjakan (default: 2.0)\n- saveIntervalMinutes: Interval penyimpanan regular dalam menit (default: 30)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Monitoring State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/temperature/reset",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature", "reset"]
+            },
+            "description": "Mereset state monitoring ke default.\n\n**Kegunaan:** Mengembalikan konfigurasi ke nilai awal.\n\n**Kapan digunakan:** Saat ingin memulai monitoring dari awal."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4️⃣ ML Inference & Prediction",
+      "description": "Endpoint untuk prediksi Machine Learning.\n\n**Alur Rekomendasi:**\n1. Pastikan sudah ada data sensor (minimal 1 jam data)\n2. Gunakan Full Prediction untuk mendapatkan prediksi lengkap\n3. Lihat History untuk analisis trend\n\n**Fitur Prediksi:**\n- 🌾 Waktu Panen - Prediksi kapan jamur siap panen\n- ⚠️ Risiko Gagal - Level risiko gagal panen\n- 🚨 Anomali - Deteksi pembacaan sensor tidak normal\n- 💡 Rekomendasi - Saran untuk optimasi pertumbuhan",
+      "item": [
+        {
+          "name": "Full Prediction (Recommended)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceId\": \"ESP32-001\",\n    \"baglogCount\": 200,\n    \"hoursBack\": 24\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict"]
+            },
+            "description": "Prediksi lengkap dengan agregasi data sensor real-time.\n\n**Kegunaan:** Mendapatkan prediksi panen, risiko, dan anomali.\n\n**Parameter:**\n- deviceId: Filter berdasarkan device (opsional)\n- baglogCount: Jumlah baglog jamur (default: 100)\n- hoursBack: Jam data yang diagregasi (default: 24)\n\n**Return:**\n- prediksiPanen: Estimasi hari dan tanggal panen\n- risikoGagal: Level dan probabilitas risiko\n- anomali: Deteksi pembacaan tidak normal\n- rekomendasi: Saran untuk petani\n- kondisiSaatIni: Ringkasan kondisi lingkungan"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict from Stored Features",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceId\": \"ESP32-001\",\n    \"baglogCount\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/predict-stored",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "predict-stored"]
+            },
+            "description": "Prediksi menggunakan fitur yang sudah di-compute.\n\n**Kegunaan:** Prediksi lebih cepat tanpa agregasi ulang.\n\n**Kapan digunakan:** Jika sudah pernah compute-features sebelumnya."
+          },
+          "response": []
+        },
+        {
+          "name": "Compute & Store Features",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceId\": \"ESP32-001\",\n    \"windowType\": \"hourly\",\n    \"baglogCount\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inference/compute-features",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "compute-features"]
+            },
+            "description": "Menghitung dan menyimpan fitur agregasi.\n\n**Kegunaan:** Pre-compute fitur untuk prediksi lebih cepat.\n\n**Parameter:**\n- windowType: 'hourly' atau 'daily'\n\n**Kapan digunakan:** Untuk scheduled job atau sebelum predict-stored."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Features Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/inference/features/summary?hoursBack=24",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "features", "summary"],
+              "query": [
+                {
+                  "key": "hoursBack",
+                  "value": "24"
+                }
+              ]
+            },
+            "description": "Mendapatkan ringkasan fitur dengan metrik kualitas data.\n\n**Kegunaan:** Melihat ringkasan fitur dan kualitas data.\n\n**Return:**\n- features: Nilai fitur yang dihitung\n- quality: Metrik kualitas (sampleCount, completeness)\n- window: Informasi time window"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Prediction History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/inference/history?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Mendapatkan riwayat prediksi sebelumnya.\n\n**Kegunaan:** Analisis trend prediksi dari waktu ke waktu.\n\n**Kapan digunakan:** Untuk dashboard analytics."
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/inference/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inference", "health"]
+            },
+            "description": "Mengecek kesehatan pipeline inference.\n\n**Kegunaan:** Monitoring status sistem.\n\n**Return:**\n- express: Status Express backend\n- fastapi: Status FastAPI ML server\n- supabase: Status koneksi database\n- circuit_breaker: Status circuit breaker"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5️⃣ Device Control & Session",
+      "description": "Endpoint untuk mengontrol device dengan sistem session berbasis PIN.\n\n**Alur Kontrol Device:**\n1. Auth Device - Autentikasi dengan PIN, dapat session token (5 menit)\n2. Send Control - Kirim perintah ke Arduino\n3. Check Status - Cek sisa waktu session\n4. Extend Session - Perpanjang jika perlu\n5. Logout - Akhiri session\n\n**⚠️ Penting:**\n- Session berlaku 5 menit untuk keamanan\n- Setelah expired, harus auth ulang dengan PIN\n- Header X-Device-Session wajib untuk endpoint control",
+      "item": [
+        {
+          "name": "Authenticate Device (Get Session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('sessionToken', json.session.token);",
+                  "    ",
+                  "    pm.test('Session token received', function() {",
+                  "        pm.expect(json.session.token).to.be.a('string');",
+                  "    });",
+                  "    ",
+                  "    console.log('✅ Session token saved. Expires in:', json.session.expiresIn, 'seconds');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"deviceCode\": \"{{deviceCode}}\",\n    \"pin\": \"{{devicePin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/auth",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "auth"]
+            },
+            "description": "Autentikasi dengan PIN untuk mendapatkan session token.\n\n**Kegunaan:** Mendapatkan akses kontrol device.\n\n**Session berlaku:** 5 menit\n\n**Auto-save:** Session token otomatis tersimpan ke collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Session Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Session",
+                "value": "{{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/session/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "session", "status"]
+            },
+            "description": "Mengecek apakah session masih valid.\n\n**Kegunaan:** Melihat sisa waktu session.\n\n**Return:**\n- valid: true/false\n- remainingTime: Detik tersisa\n- expiresAt: Waktu expired"
+          },
+          "response": []
+        },
+        {
+          "name": "Extend Session",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Device-Session",
+                "value": "{{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/session/extend",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "session", "extend"]
+            },
+            "description": "Memperpanjang session 5 menit lagi.\n\n**Kegunaan:** Perpanjang session tanpa perlu masukkan PIN.\n\n**Kapan digunakan:** Sebelum session expired jika masih butuh akses."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Control Command",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Device-Session",
+                "value": "{{sessionToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"targetTemperature\": 26.0,\n    \"targetHumidity\": 85.0,\n    \"fanSpeed\": 50,\n    \"heaterOn\": false,\n    \"action\": \"AUTO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/device/control",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "control"]
+            },
+            "description": "Mengirim perintah kontrol ke Arduino via WebSocket.\n\n**Kegunaan:** Mengontrol suhu target, kipas, heater, dll.\n\n**Parameter:**\n- targetTemperature: Target suhu (°C)\n- targetHumidity: Target kelembaban (%)\n- fanSpeed: Kecepatan kipas (0-100)\n- heaterOn: Nyalakan heater (true/false)\n- action: Mode (AUTO, MANUAL, OFF)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Device Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Session",
+                "value": "{{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/control/{{deviceCode}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "control", "{{deviceCode}}", "status"]
+            },
+            "description": "Mendapatkan status terkini device.\n\n**Kegunaan:** Melihat informasi device dan sisa session."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout Session",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Device-Session",
+                "value": "{{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/session/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "device", "session", "logout"]
+            },
+            "description": "Menghentikan session secara manual.\n\n**Kegunaan:** Mengakhiri session untuk keamanan.\n\n**Kapan digunakan:** Saat selesai mengontrol device."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6️⃣ Data Logging & History",
+      "description": "Endpoint untuk menyimpan dan mengakses log data sensor.\n\n**Fitur:**\n- Save Live Data: Simpan data sensor manual\n- Get History: Lihat riwayat semua log\n- Predict from History: Analisis AI dari data histori",
+      "item": [
+        {
+          "name": "Save Live Data",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"temperature\": 26.5,\n    \"humidity\": 85.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/data/live-data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data", "live-data"]
+            },
+            "description": "Menyimpan data sensor langsung ke database.\n\n**Kegunaan:** Alternatif penyimpanan data sensor.\n\n**Perbedaan dengan /temperature/data:**\n- Langsung simpan ke DB (tidak ada threshold/interval logic)\n- Tidak broadcast ke WebSocket"
+          },
+          "response": []
+        },
+        {
+          "name": "Get History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/data/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data", "history"]
+            },
+            "description": "Mendapatkan riwayat log sensor user.\n\n**Kegunaan:** Melihat semua data sensor yang tersimpan.\n\n**Return:**\n- userId, userName, userEmail\n- logs: Array of log entries"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict from History (AI)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/data/prediksi-from-history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data", "prediksi-from-history"]
+            },
+            "description": "Mendapatkan prediksi AI berdasarkan histori data.\n\n**Kegunaan:** Analisis AI menggunakan Google Gemini.\n\n**Return:**\n- kesimpulan: Ringkasan kondisi\n- skorPertumbuhan: 0-10\n- tingkatRisiko: High/Medium/Low\n- saran: Rekomendasi untuk petani\n- deskripsi: Penjelasan detail"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7️⃣ Temperature WebSocket",
+      "description": "Endpoint temperature dengan broadcast WebSocket.\n\n**Perbedaan dengan /api/temperature:**\n- Data di-broadcast ke semua WebSocket client\n- State per-user (bukan global)\n- Ada endpoint simulate untuk testing",
+      "item": [
+        {
+          "name": "Send Data (WS Broadcast)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"temperature\": 26.5,\n    \"humidity\": 85.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature-ws/data",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature-ws", "data"]
+            },
+            "description": "Kirim data temperature dengan broadcast WebSocket.\n\n**Kegunaan:** Mengirim data sensor dengan notifikasi real-time."
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate Data (Testing)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"count\": 10,\n    \"interval\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature-ws/simulate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature-ws", "simulate"]
+            },
+            "description": "Simulasi data otomatis untuk testing.\n\n**Kegunaan:** Generate data random untuk testing WebSocket."
+          },
+          "response": []
+        },
+        {
+          "name": "Get State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/temperature-ws/state",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature-ws", "state"]
+            },
+            "description": "Get state monitoring per-user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Config",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"threshold\": 3.0,\n    \"saveIntervalMinutes\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/temperature-ws/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature-ws", "config"]
+            },
+            "description": "Update konfigurasi monitoring per-user."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset State",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/temperature-ws/reset",
+              "host": ["{{base_url}}"],
+              "path": ["api", "temperature-ws", "reset"]
+            },
+            "description": "Reset state monitoring ke default."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

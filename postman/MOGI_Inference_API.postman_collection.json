@@ -1,0 +1,514 @@
+{
+  "info": {
+    "_postman_id": "mogi-inference-api",
+    "name": "MOGI Inference API",
+    "description": "API collection untuk Mushroom Growing Intelligence - ML Inference Pipeline",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "express_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "fastapi_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "FastAPI - ML Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{fastapi_url}}/health",
+              "host": ["{{fastapi_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if FastAPI ML service is healthy and models are loaded"
+          },
+          "response": []
+        },
+        {
+          "name": "Root Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{fastapi_url}}/",
+              "host": ["{{fastapi_url}}"],
+              "path": [""]
+            },
+            "description": "Basic status check"
+          },
+          "response": []
+        },
+        {
+          "name": "Full Prediction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0,\n  \"warmth\": 28.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "description": "Full multi-model prediction: harvest time, risk, anomaly, recommendations"
+          },
+          "response": []
+        },
+        {
+          "name": "Harvest Prediction Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0,\n  \"warmth\": 28.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict/harvest",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict", "harvest"]
+            },
+            "description": "Predict harvest time in days only"
+          },
+          "response": []
+        },
+        {
+          "name": "Risk Prediction Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0,\n  \"warmth\": 28.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict/risk",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict", "risk"]
+            },
+            "description": "Predict failure risk only"
+          },
+          "response": []
+        },
+        {
+          "name": "Anomaly Detection Only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0,\n  \"warmth\": 28.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict/anomaly",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict", "anomaly"]
+            },
+            "description": "Detect sensor anomalies only"
+          },
+          "response": []
+        },
+        {
+          "name": "Model Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/models/info",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "models", "info"]
+            },
+            "description": "Get information about loaded ML models"
+          },
+          "response": []
+        },
+        {
+          "name": "[Test] High Temperature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 32.0,\n  \"humidity\": 75.0,\n  \"warmth\": 35.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "description": "Test case: High temperature - should return warnings"
+          },
+          "response": []
+        },
+        {
+          "name": "[Test] Low Humidity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.0,\n  \"humidity\": 60.0,\n  \"warmth\": 28.0,\n  \"baglog\": 100\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "description": "Test case: Low humidity - should return humidity warning"
+          },
+          "response": []
+        },
+        {
+          "name": "[Test] Optimal Conditions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 24.0,\n  \"humidity\": 88.0,\n  \"warmth\": 27.0,\n  \"baglog\": 200\n}"
+            },
+            "url": {
+              "raw": "{{fastapi_url}}/api/v1/predict",
+              "host": ["{{fastapi_url}}"],
+              "path": ["api", "v1", "predict"]
+            },
+            "description": "Test case: Optimal conditions - should return low risk"
+          },
+          "response": []
+        }
+      ],
+      "description": "Direct API calls to FastAPI ML Service (Python)"
+    },
+    {
+      "name": "Express - Inference Pipeline",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{express_url}}/api/inference/health",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "health"]
+            },
+            "description": "Check inference pipeline health (includes FastAPI status)"
+          },
+          "response": []
+        },
+        {
+          "name": "Full Predict (Real-time Aggregation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 100,\n  \"hoursBack\": 24\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/inference/predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "predict"]
+            },
+            "description": "Full prediction dengan agregasi fitur real-time dari log sensor.\n\nResponse dalam Bahasa Indonesia:\n- prediksiPanen: berapa hari lagi + tanggal panen\n- risikoGagal: status risiko gagal panen\n- anomali: deteksi anomali sensor\n- rekomendasi: saran dalam Bahasa Indonesia"
+          },
+          "response": []
+        },
+        {
+          "name": "Full Predict (With Device ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"YOUR_DEVICE_UUID\",\n  \"baglogCount\": 150,\n  \"hoursBack\": 48\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/inference/predict",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "predict"]
+            },
+            "description": "Prediction filtered by specific device"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict from Stored Features",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baglogCount\": 100\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/inference/predict-stored",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "predict-stored"]
+            },
+            "description": "Faster prediction using pre-computed features from feature store"
+          },
+          "response": []
+        },
+        {
+          "name": "Compute & Store Features",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"windowType\": \"hourly\",\n  \"baglogCount\": 100\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/inference/compute-features",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "compute-features"]
+            },
+            "description": "Manually trigger feature computation and storage"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Feature Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{express_url}}/api/inference/features/summary?hoursBack=24",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "features", "summary"],
+              "query": [
+                {
+                  "key": "hoursBack",
+                  "value": "24"
+                }
+              ]
+            },
+            "description": "Get feature summary with data quality metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Inference History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{express_url}}/api/inference/history?limit=20",
+              "host": ["{{express_url}}"],
+              "path": ["api", "inference", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get prediction history for audit trail"
+          },
+          "response": []
+        }
+      ],
+      "description": "Express API endpoints that aggregate data and call FastAPI",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Express - Temperature (IoT)",
+      "item": [
+        {
+          "name": "Send Temperature Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0,\n  \"warmth\": 28.0\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/temperature",
+              "host": ["{{express_url}}"],
+              "path": ["api", "temperature"]
+            },
+            "description": "Send sensor data from IoT device"
+          },
+          "response": []
+        }
+      ],
+      "description": "IoT sensor data endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Express - Data & History",
+      "item": [
+        {
+          "name": "Send Live Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"temperature\": 25.5,\n  \"humidity\": 85.0\n}"
+            },
+            "url": {
+              "raw": "{{express_url}}/api/data/live-data",
+              "host": ["{{express_url}}"],
+              "path": ["api", "data", "live-data"]
+            },
+            "description": "Send live temperature/humidity data"
+          },
+          "response": []
+        },
+        {
+          "name": "Get History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{express_url}}/api/data/history",
+              "host": ["{{express_url}}"],
+              "path": ["api", "data", "history"]
+            },
+            "description": "Get user's sensor data history"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict from History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{express_url}}/api/data/prediksi-from-history",
+              "host": ["{{express_url}}"],
+              "path": ["api", "data", "prediksi-from-history"]
+            },
+            "description": "Get AI prediction based on historical data"
+          },
+          "response": []
+        }
+      ],
+      "description": "Legacy data endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{auth_token}}",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

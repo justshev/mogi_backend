@@ -49,11 +49,92 @@ model Log {
   deviceId    String?  @map("device_id") // Optional device reference
   temperature Float?
   humidity    Float?
+  warmth      Float?   // Added for heat/warmth sensor data
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now()) @map("created_at")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
 
+  // Performance indexes for feature aggregation queries
+  @@index([userId, timestamp])
+  @@index([deviceId, timestamp])
+  @@index([timestamp])
   @@map("logs")
+}
+
+// Feature Store: Aggregated sensor features for ML inference
+model FeatureStore {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  deviceId        String   @default("") @map("device_id") // Empty string for no device
+  
+  // Aggregation metadata
+  windowType      String   @map("window_type") // 'hourly', 'daily', 'custom'
+  windowStart     DateTime @map("window_start")
+  windowEnd       DateTime @map("window_end")
+  sampleCount     Int      @map("sample_count")
+  
+  // Temperature features
+  tempAvg         Float    @map("temp_avg")
+  tempMin         Float    @map("temp_min")
+  tempMax         Float    @map("temp_max")
+  tempStd         Float    @map("temp_std")
+  tempTrend       Float    @map("temp_trend") // slope of linear regression
+  
+  // Humidity features
+  humidityAvg     Float    @map("humidity_avg")
+  humidityMin     Float    @map("humidity_min")
+  humidityMax     Float    @map("humidity_max")
+  humidityStd     Float    @map("humidity_std")
+  humidityTrend   Float    @map("humidity_trend")
+  
+  // Warmth features
+  warmthAvg       Float    @map("warmth_avg")
+  warmthMin       Float    @map("warmth_min")
+  warmthMax       Float    @map("warmth_max")
+  warmthStd       Float    @map("warmth_std")
+  warmthTrend     Float    @map("warmth_trend")
+  
+  // Business context
+  baglogCount     Int?     @map("baglog_count") // Number of mushroom bags
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Indexes for efficient querying
+  @@unique([userId, deviceId, windowType, windowStart])
+  @@index([userId, windowType, windowStart])
+  @@index([deviceId, windowType, windowStart])
+  @@index([windowStart, windowEnd])
+  @@map("feature_store")
+}
+
+// Inference Results: Store predictions for audit and analysis
+model InferenceResult {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  deviceId          String?  @map("device_id")
+  featureStoreId    String?  @map("feature_store_id")
+  
+  // Model versioning
+  modelVersion      String   @map("model_version")
+  
+  // Predictions
+  harvestTimeDays   Float    @map("harvest_time_days")
+  riskFail          Int      @map("risk_fail") // 0 or 1
+  riskProbability   Float?   @map("risk_probability")
+  isAnomaly         Boolean  @map("is_anomaly")
+  anomalyScore      Float?   @map("anomaly_score")
+  
+  // Recommendations (stored as JSON string)
+  recommendations   String   @map("recommendations")
+  
+  // Request metadata
+  requestLatencyMs  Int?     @map("request_latency_ms")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([deviceId, createdAt])
+  @@map("inference_results")
 }
